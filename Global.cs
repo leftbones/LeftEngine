@@ -8,4 +8,7 @@ static class Global {
 
     // Window
     public static Vector2i WindowSize = new(1280, 800);
+
+    // Drawing
+    public const int SpriteScale = 2; // All sprites are scaled by this number when drawn
 }

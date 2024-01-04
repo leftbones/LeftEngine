@@ -1,4 +1,5 @@
-﻿using Raylib_cs;
+﻿using Calcium;
+using Raylib_cs;
 using static Raylib_cs.Raylib;
 
 namespace LeftEngine;
@@ -10,29 +11,26 @@ class Program {
 
         Canvas.SetDefaultFont("Kitchen Sink.ttf");
 
-        var TextureWalkUp = LoadTexture("whitebase_walk_up.png");
-        var TextureWalkDown = LoadTexture("whitebase_walk_down.png");
-        var TextureWalkLeft = LoadTexture("whitebase_walk_left.png");
-        var TextureWalkRight = LoadTexture("whitebase_walk_right.png");
+        var SpriteSheet = new SpriteSheet(LoadTexture("character_sprites.png"), 32);
 
-        var AP = new AnimationPlayer(
-            new List<Animation>() {
-               new("walk_up", TextureWalkUp, 0, 0, 24, 32, 4),
-               new("walk_down", TextureWalkDown, 0, 0, 24, 32, 4),
-               new("walk_left", TextureWalkLeft, 0, 0, 24, 32, 4),
-               new("walk_right", TextureWalkRight, 0, 0, 24, 32, 4),
-            }
-        );
+        var AnimSpin = new Animation("spin", SpriteSheet, 0, 0, 4, offset: new Vector2i(-12, -16));
+        var AnimWalkUp = new Animation("walk_up", SpriteSheet, new List<Vector2i>() { new(2, 0), new(2, 1), new(2, 0), new(2, 2) }, offset: new Vector2i(-12, -16));
+        var AnimWalkRight = new Animation("walk_right", SpriteSheet, new List<Vector2i>() { new(1, 0), new(1, 1), new(1, 0), new(1, 2) }, offset: new Vector2i(-12, -16));
+        var AnimWalkDown = new Animation("walk_down", SpriteSheet, new List<Vector2i>() { new(0, 0), new(0, 1), new(0, 0), new(0, 2) }, offset: new Vector2i(-12, -16));
+        var AnimWalkLeft = new Animation("walk_left", SpriteSheet, new List<Vector2i>() { new(3, 0), new(3, 1), new(3, 0), new(3, 2) }, offset: new Vector2i(-12, -16));
+
+        var AP = new AnimationPlayer(new List<Animation>() { AnimSpin, AnimWalkUp, AnimWalkRight, AnimWalkDown, AnimWalkLeft }, autoplay: false);
 
         AP.Animations["walk_up"].OnAnimationFinished = () => { AP.Play("walk_right"); };
         AP.Animations["walk_right"].OnAnimationFinished = () => { AP.Play("walk_down"); };
         AP.Animations["walk_down"].OnAnimationFinished = () => { AP.Play("walk_left"); };
         AP.Animations["walk_left"].OnAnimationFinished = () => { AP.Play("walk_up"); };
 
+        AP.Play("walk_down");
+
         while (!WindowShouldClose()) {
             //
             // Update
-
             AP.Update();
 
             //
@@ -40,9 +38,9 @@ class Program {
             BeginDrawing();
             ClearBackground(Color.DARKBLUE);
 
-            AP.Draw();
+            AP.Draw(Global.WindowSize.X / 2, Global.WindowSize.Y / 2);
 
-            Canvas.DrawText($"LeftEngine {Global.BuildVer}", 8, Global.WindowSize.Y - 8, 12, anchor: Anchor.BottomLeft);
+            Canvas.DrawText($"LeftEngine {Global.BuildVer}", 8, Global.WindowSize.Y - 8, 8, anchor: Anchor.BottomLeft);
 
             EndDrawing();
         }

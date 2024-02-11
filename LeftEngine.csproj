@@ -9,7 +9,13 @@
 
   <ItemGroup>
     <PackageReference Include="CalciumLib" Version="1.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Raylib-cs" Version="5.0.0" />
   </ItemGroup>
+
+  <!-- <ItemGroup> -->
+    <!-- <PackageReference Include="CalciumLib" Version="1.1.0" /> -->
+    <!-- <PackageReference Include="Raylib-cs" Version="5.0.0" /> -->
+  <!-- </ItemGroup> -->
 
 </Project>

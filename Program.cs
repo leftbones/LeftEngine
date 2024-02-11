@@ -1,52 +1,21 @@
-﻿using Calcium;
-using Raylib_cs;
+﻿using Raylib_cs;
 using static Raylib_cs.Raylib;
 
 namespace LeftEngine;
 
 class Program {
     static void Main(string[] args) {
-        InitWindow(Global.WindowSize.X, Global.WindowSize.Y, "LeftEngine");
-        SetTargetFPS(60);
-
-        Canvas.SetDefaultFont("Kitchen Sink.ttf");
-
-        var SpriteSheet = new SpriteSheet(LoadTexture("character_sprites.png"), 32);
-
-        var AnimSpin = new Animation("spin", SpriteSheet, 0, 0, 4, offset: new Vector2i(-12, -16));
-        var AnimWalkUp = new Animation("walk_up", SpriteSheet, new List<Vector2i>() { new(2, 0), new(2, 1), new(2, 0), new(2, 2) }, offset: new Vector2i(-12, -16));
-        var AnimWalkRight = new Animation("walk_right", SpriteSheet, new List<Vector2i>() { new(1, 0), new(1, 1), new(1, 0), new(1, 2) }, offset: new Vector2i(-12, -16));
-        var AnimWalkDown = new Animation("walk_down", SpriteSheet, new List<Vector2i>() { new(0, 0), new(0, 1), new(0, 0), new(0, 2) }, offset: new Vector2i(-12, -16));
-        var AnimWalkLeft = new Animation("walk_left", SpriteSheet, new List<Vector2i>() { new(3, 0), new(3, 1), new(3, 0), new(3, 2) }, offset: new Vector2i(-12, -16));
-
-        var AP = new AnimationPlayer(new List<Animation>() { AnimSpin, AnimWalkUp, AnimWalkRight, AnimWalkDown, AnimWalkLeft }, autoplay: false);
-
-        AP.Animations["walk_up"].OnAnimationFinished = () => { AP.Play("walk_right"); };
-        AP.Animations["walk_right"].OnAnimationFinished = () => { AP.Play("walk_down"); };
-        AP.Animations["walk_down"].OnAnimationFinished = () => { AP.Play("walk_left"); };
-        AP.Animations["walk_left"].OnAnimationFinished = () => { AP.Play("walk_up"); };
-
-        AP.Play("walk_down");
+        Engine.Start();
+        Canvas.SetDefaultFont("Kitchen Sink.ttf"); 
 
         while (!WindowShouldClose()) {
-            //
-            // Update
-            AP.Update();
-
-            //
-            // Draw
-            BeginDrawing();
-            ClearBackground(Color.DARKBLUE);
-
-            AP.Draw(Global.WindowSize.X / 2, Global.WindowSize.Y / 2);
-
-            Canvas.DrawText($"LeftEngine {Global.BuildVer}", 8, Global.WindowSize.Y - 8, 8, anchor: Anchor.BottomLeft);
-
-            EndDrawing();
+            Engine.Update();
+            Engine.Draw();
         }
 
         //
         // Exit
+        Engine.Exit();
         CloseWindow();
     }
 }

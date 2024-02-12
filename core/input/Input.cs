@@ -9,12 +9,13 @@ static class Input {
 
     private static readonly Dictionary<int, List<Event>> KeyBinds = new();
 
-    private static readonly Dictionary<string, Event> EventMap = new() {
-        { "MoveUp", new Event(EventType.Hold, () => { Console.WriteLine("W"); }) },
-        { "MoveDown", new Event(EventType.Hold, () => { Console.WriteLine("S"); }) },
-        { "MoveLeft", new Event(EventType.Hold, () => { Console.WriteLine("A"); }) },
-        { "MoveRight", new Event(EventType.Hold, () => { Console.WriteLine("D"); }) },
-    };
+    private static Dictionary<string, Event> EventMap;
+    // private static readonly Dictionary<string, Event> EventMap = new() {
+    //     { "MoveUp", new Event(EventType.Hold, () => { Console.WriteLine("W"); }) },
+    //     { "MoveDown", new Event(EventType.Hold, () => { Console.WriteLine("S"); }) },
+    //     { "MoveLeft", new Event(EventType.Hold, () => { Console.WriteLine("A"); }) },
+    //     { "MoveRight", new Event(EventType.Hold, () => { Console.WriteLine("D"); }) },
+    // };
 
     public static void Update() {
         // Clear all events from the previous update
@@ -50,7 +51,16 @@ static class Input {
 
         // Process all keys in the InputStream, fire events if possible
         foreach (var Key in InputStream) {
-            if (KeyBinds.TryGetValue(Key.Code, out List<Event> EventList)) {
+            var Handled = false;
+
+            foreach (var Token in ControlSystem.Tokens) {
+                if (Token.FireEvent(Key)) {
+                    Handled = true;
+                    continue;
+                }
+            }
+
+            if (!Handled && KeyBinds.TryGetValue(Key.Code, out List<Event> EventList)) {
                 foreach (var Event in EventList) {
                     if (Event.Type == Key.Type || Event.Type == EventType.Any) {
                         Event.Fire();
@@ -58,6 +68,11 @@ static class Input {
                 }
             }
         }
+    }
+
+    public static void SetEvents(Dictionary<string, Event> map) {
+        EventMap = map;
+        ApplyKeymap();
     }
 
     public static void ApplyKeymap() {

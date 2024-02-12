@@ -4,17 +4,17 @@ using static Raylib_cs.Raylib;
 
 namespace LeftEngine;
 
+
 //
 // Core Methods
 static partial class Engine {
     public static void Start() {
         // Load and apply the keymap
         Config.LoadKeymap();
-        Input.ApplyKeymap();
 
         // Create window
         InitWindow(Config.WindowSize.X, Config.WindowSize.Y, Global.WindowTitle);
-        SetWindowPosition(1400, 540); // Linux tries to put the window in between both of my monitors
+        SetWindowPosition(1400, 540); // Linux tries to put the window in between both of my monitors for some reason, this moves it over to my main monitor
 
         SetTargetFPS(60);
 
@@ -29,7 +29,7 @@ static partial class Engine {
         BeginDrawing();
         ClearBackground(Color.DARKBLUE);
 
-        Canvas.DrawText($"LeftEngine {Global.BuildVer}", 8, Config.WindowSize.Y - 8, 8, anchor: Anchor.BottomLeft);
+        Canvas.DrawText($"LeftEngine {Global.BuildVer}", 8, Config.WindowSize.Y - 8, 16, anchor: Anchor.BottomLeft);
 
         EndDrawing(); 
     }
@@ -38,6 +38,12 @@ static partial class Engine {
         Console.WriteLine("Engine stopped."); }
 }
 
+
+//
+// Properties
+static partial class Engine {
+    public static float DeltaTime => GetFrameTime();
+}
 
 //
 // Property Modifiers

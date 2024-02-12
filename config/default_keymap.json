@@ -1,4 +1,6 @@
 {
+    "w": ["MoveUp"],
+    "s": ["MoveDown"],
     "a": ["MoveLeft"],
     "d": ["MoveRight"]
 }

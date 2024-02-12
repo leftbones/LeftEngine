@@ -14,6 +14,9 @@ static class Global {
     // Drawing
     public const int SpriteScale = 2; // All sprites are scaled by this number when drawn
 
+    // Physics
+    public const float Gravity = 9.8f;
+
     // Input
     public static Dictionary<String, int> InputMap = new() {
         // Mouse

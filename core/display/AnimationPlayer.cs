@@ -42,7 +42,8 @@ class Animation {
     public Vector2i Offset { get; private set; }            // Offset to apply when drawing this Animation
     public bool Loop { get; private set; }                  // If the animation should loop when it's finished
 
-    public Action OnAnimationFinished { get; set; }         // Action called when the Animation finishes playing
+    // Actions
+    public Action OnFinishedPlaying { get; set; }         // Action called when the Animation finishes playing
 
     // Create an Animation by giving the coordinates of the first Frame and how many Frames should follow
     public Animation(string name, SpriteSheet sprite_sheet, int x, int y, int frame_count, int frame_length=15, Vector2i? offset=null, bool loop=true) {
@@ -138,7 +139,7 @@ class AnimationPlayer {
                     Playing = Animation.Loop;
                     Progress = 0;
 
-                    Animation.OnAnimationFinished?.Invoke();
+                    Animation.OnFinishedPlaying?.Invoke();
                 }
             }
         }

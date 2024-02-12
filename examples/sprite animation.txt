@@ -1,3 +1,5 @@
+// Creates a sprite sheet and several animations from that sheet, creates a new AnimationPlayer with the sprites, assigns OnFinishedPlaying events to the animations
+
 var SpriteSheet = new SpriteSheet(LoadTexture("character_sprites.png"), 32);
 
 var AnimSpin = new Animation("spin", SpriteSheet, 0, 0, 4, offset: new Vector2i(-12, -16));
@@ -8,9 +10,9 @@ var AnimWalkLeft = new Animation("walk_left", SpriteSheet, new List<Vector2i>() 
 
 var AP = new AnimationPlayer(new List<Animation>() { AnimSpin, AnimWalkUp, AnimWalkRight, AnimWalkDown, AnimWalkLeft }, autoplay: false);
 
-AP.Animations["walk_up"].OnAnimationFinished = () => { AP.Play("walk_right"); };
-AP.Animations["walk_right"].OnAnimationFinished = () => { AP.Play("walk_down"); };
-AP.Animations["walk_down"].OnAnimationFinished = () => { AP.Play("walk_left"); };
-AP.Animations["walk_left"].OnAnimationFinished = () => { AP.Play("walk_up"); };
+AP.Animations["walk_up"].OnFinishedPlaying = () => { AP.Play("walk_right"); };
+AP.Animations["walk_right"].OnFinishedPlaying = () => { AP.Play("walk_down"); };
+AP.Animations["walk_down"].OnFinishedPlaying = () => { AP.Play("walk_left"); };
+AP.Animations["walk_left"].OnFinishedPlaying = () => { AP.Play("walk_up"); };
 
 AP.Play("walk_down");

@@ -1,6 +1,4 @@
-using Raylib_cs;
-
-namespace LeftEngine;
+namespace LeftEngine.Core.Input;
 
 public enum EventType { Press, Release, Hold, Any };
 

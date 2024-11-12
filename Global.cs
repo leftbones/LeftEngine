@@ -9,7 +9,7 @@ static class Global {
     public const string BuildVer = "1.0.0-alpha";
 
     // Window
-    public static string WindowTitle = "LeftEngine";
+    public static string WindowTitle = $"LeftEngine {BuildVer}";
 
     // Drawing
     public const int SpriteScale = 2; // All sprites are scaled by this number when drawn

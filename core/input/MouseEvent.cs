@@ -1,7 +1,7 @@
 using Calcium;
 using Raylib_cs;
 
-namespace LeftEngine;
+namespace LeftEngine.Core.Input;
 
 abstract class MouseEvent : Event {
     public MouseButton? Button { get; private set; }

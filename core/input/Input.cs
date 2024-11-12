@@ -1,22 +1,18 @@
 using Raylib_cs;
 using static Raylib_cs.Raylib;
 
-namespace LeftEngine;
+namespace LeftEngine.Core.Input;
 
 static class Input {
-    private static readonly List<Key> InputStream = new();
-    private static readonly List<int> HeldKeys = new();
+    private static readonly List<Key> InputStream = new();                      // Stores all keys pressed during the current update
+    private static readonly List<int> HeldKeys = new();                         // Stores all keys currently held down until they are released
 
-    private static readonly Dictionary<int, List<Event>> KeyBinds = new();
+    private static readonly Dictionary<int, List<Event>> KeyBinds = new();      // Stores all key bindings and their associated events
 
-    private static Dictionary<string, Event> EventMap;
-    // private static readonly Dictionary<string, Event> EventMap = new() {
-    //     { "MoveUp", new Event(EventType.Hold, () => { Console.WriteLine("W"); }) },
-    //     { "MoveDown", new Event(EventType.Hold, () => { Console.WriteLine("S"); }) },
-    //     { "MoveLeft", new Event(EventType.Hold, () => { Console.WriteLine("A"); }) },
-    //     { "MoveRight", new Event(EventType.Hold, () => { Console.WriteLine("D"); }) },
-    // };
+    private static Dictionary<string, Event> EventMap;                          // Stores all events available to be bound to keys
 
+
+    // Clear the input stream, read all input events, then process them
     public static void Update() {
         // Clear all events from the previous update
         InputStream.Clear();
@@ -53,13 +49,6 @@ static class Input {
         foreach (var Key in InputStream) {
             var Handled = false;
 
-            foreach (var Token in ControlSystem.Tokens) {
-                if (Token.FireEvent(Key)) {
-                    Handled = true;
-                    continue;
-                }
-            }
-
             if (!Handled && KeyBinds.TryGetValue(Key.Code, out List<Event> EventList)) {
                 foreach (var Event in EventList) {
                     if (Event.Type == Key.Type || Event.Type == EventType.Any) {
@@ -70,11 +59,13 @@ static class Input {
         }
     }
 
+    // Populate the EventMap dictionary with the events given
     public static void SetEvents(Dictionary<string, Event> map) {
         EventMap = map;
         ApplyKeymap();
     }
 
+    // Apply the keymap from the config file to the KeyBinds dictionary
     public static void ApplyKeymap() {
         foreach (var Item in Config.Keymap) {
             if (Global.InputMap.TryGetValue(Item.Key, out int value)) {

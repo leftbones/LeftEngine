@@ -1,41 +1,47 @@
 using Calcium;
 using Raylib_cs;
 using static Raylib_cs.Raylib;
+using LeftEngine.Core.Screen;
+using LeftEngine.Core.Input;
 
-namespace LeftEngine;
+namespace LeftEngine.Core;
 
 
 //
 // Core Methods
 static partial class Engine {
+    // Start the engine and its components
     public static void Start() {
         // Load and apply the keymap
         Config.LoadKeymap();
 
         // Create window
         InitWindow(Config.WindowSize.X, Config.WindowSize.Y, Global.WindowTitle);
-        SetWindowPosition(1400, 540); // Linux tries to put the window in between both of my monitors for some reason, this moves it over to my main monitor
-
+        SetExitKey(KeyboardKey.KEY_NULL);
         SetTargetFPS(60);
 
-        Console.WriteLine("Engine started.");
+        Console.WriteLine("Engine started");
     }
 
+    // Update all engine components
     public static void Update() {
         Input.Update();
     }
 
+    // Draw all engine components
     public static void Draw() {
         BeginDrawing();
-        ClearBackground(Color.DARKBLUE);
+        ClearBackground(Canvas.BackgroundColor);
 
-        Canvas.DrawText($"LeftEngine {Global.BuildVer}", 8, Config.WindowSize.Y - 8, 16, anchor: Anchor.BottomLeft);
+        Canvas.DrawTextShadow($"LeftEngine {Global.BuildVer}", 8, Config.WindowSize.Y - 8,  anchor: Anchor.BottomLeft);
 
-        EndDrawing(); 
+        EndDrawing();
     }
 
+    // Shut down the engine
     public static void Exit() {
-        Console.WriteLine("Engine stopped."); }
+        Console.WriteLine("Engine stopped");
+    }
 }
 
 
@@ -45,14 +51,17 @@ static partial class Engine {
     public static float DeltaTime => GetFrameTime();
 }
 
+
 //
 // Property Modifiers
 static partial class Engine {
+    // Set the current window size
     public static void SetWindowSize(int width, int height) {
         Config.WindowSize = new Vector2i(width, height);
         SetWindowSize(width, height);
     }
 
+    // Toggle fullscreen mode
     public static void ToggleFullscreen() {
         Config.Fullscreen = !Config.Fullscreen;
         ToggleFullscreen();

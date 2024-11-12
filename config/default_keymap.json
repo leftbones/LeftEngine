@@ -1,6 +1,4 @@
 {
-    "w": ["MoveUp"],
-    "s": ["MoveDown"],
-    "a": ["MoveLeft"],
-    "d": ["MoveRight"]
+    "escape": ["Exit"],
+    "space": ["ChangeBackground"]
 }

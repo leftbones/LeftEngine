@@ -2,18 +2,22 @@ using System.Numerics;
 using Raylib_cs;
 using static Raylib_cs.Raylib;
 
-namespace LeftEngine;
+namespace LeftEngine.Core.Screen;
 
 enum Anchor { TopLeft, TopRight, BottomLeft, BottomRight, Center }
 
 //
 // Draw Methods
 static partial class Canvas {
-    private static Font DefaultFont { get; set; }           = GetFontDefault();
+    private static Font DefaultFont { get; set; }           = LoadFontEx("Assets/Kitchen Sink.ttf", 96, null, 256);
     private static int DefaultFontSize { get; set; }        = 16;
     private static int DefaultFontSpacing { get; set; }     = 0;
     private static Color DefaultTextColor { get; set; }     = Color.WHITE;
 
+    public static Color BackgroundColor { get; set; }      = Color.DARKBLUE;
+
+
+    // Draw text to the screen
     public static void DrawText(string text, int x, int y, int? font_size=null, int? font_spacing=null, Color? color=null, Anchor anchor=Anchor.TopLeft) {
         var FontSize = font_size ?? DefaultFontSize;
         var FontSpacing = font_spacing ?? DefaultFontSpacing;
@@ -43,6 +47,13 @@ static partial class Canvas {
 
         DrawTextEx(DefaultFont, text, AnchorPos, FontSize, FontSpacing, TextColor);
     }
+
+
+    // Helper function for drawing text with a drop shadow (by calling DrawText twice)
+    public static void DrawTextShadow(string text, int x, int y, int offset=2, int? font_size=null, int? font_spacing=null, Color? color=null, Anchor anchor=Anchor.TopLeft) {
+        DrawText(text, x + offset, y + offset, font_size, font_spacing, Color.BLACK, anchor);
+        DrawText(text, x, y, font_size, font_spacing, color, anchor);
+    }
 }
 
 //
@@ -62,5 +73,9 @@ static partial class Canvas {
 
     public static void SetDefaultTextColor(Color color) {
         DefaultTextColor = color;
+    }
+
+    public static void SetBackgroundColor(Color color) {
+        BackgroundColor = color;
     }
 }

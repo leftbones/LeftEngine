@@ -1,7 +1,7 @@
 using Raylib_cs;
 using static Raylib_cs.Raylib;
 
-namespace LeftEngine;
+namespace LeftEngine.Core.Input;
 
 enum InputDirection { Down, Up };
 

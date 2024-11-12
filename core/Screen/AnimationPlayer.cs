@@ -3,12 +3,12 @@ using Calcium;
 using Raylib_cs;
 using static Raylib_cs.Raylib;
 
-namespace LeftEngine;
+namespace LeftEngine.Core.Screen;
 
 struct SpriteSheet {
     public Texture2D Texture;
     public Vector2i SpriteSize;
-    
+
     public SpriteSheet(Texture2D texture, int sprite_size) : this(texture, new Vector2i(sprite_size, sprite_size)) { }
     public SpriteSheet(Texture2D texture, Vector2i sprite_size) {
         Texture = texture;

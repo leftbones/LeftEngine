@@ -30,7 +30,7 @@ static class Camera {
         Viewport.Target = Position;
     }
 
-    public static Vector2 GetTilePos() {
+    public static Vector2 GetCellPos() {
         var tilePos = new Vector2(
             (float)Math.Round((Target.X / 32 + Target.Y / 16) / 2) - 1,
             (float)Math.Round((Target.Y / 16 - Target.X / 32) / 2)
@@ -38,8 +38,8 @@ static class Camera {
         return tilePos;
     }
 
-    public static Vector2 GetCursorTilePos() {
-        var mousePos = Input.MousePos + Position - Config.Resolution / 2;
+    public static Vector2 GetCursorCellPos() {
+        var mousePos = new Vector2(0, -80) + Input.MousePos + Position - Config.Resolution / 2;
         var tilePos = new Vector2(
             (float)Math.Round((mousePos.X / 32 + mousePos.Y / 16) / 2) - 1,
             (float)Math.Round((mousePos.Y / 16 - mousePos.X / 32) / 2)

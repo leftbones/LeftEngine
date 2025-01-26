@@ -4,20 +4,19 @@ namespace LeftEngine.World;
 
 class Cell {
     public List<Tile> Tiles { get; set; }
-    public bool BlocksLight { get; set; }
 
     public Cell() {
         Tiles = [];
     }
 }
 
-class TileMap {
+class GridMap {
     public int Width { get; private set; }
     public int Height { get; private set; }
 
     private readonly List<Cell> cells = [];
 
-    public TileMap(int width, int height) {
+    public GridMap(int width, int height) {
         Width = width;
         Height = height; 
 

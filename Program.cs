@@ -26,7 +26,7 @@ class Program {
             (map.Center.X + map.Center.Y) * 16
         );
 
-        var playerPos = new Vector2(worldCenter.X - 32, worldCenter.Y - 16);
+        var playerPos = new Vector2(worldCenter.X + 32, worldCenter.Y + 16);
         Camera.Target = playerPos;
 
         // Main Loop
@@ -55,6 +55,9 @@ class Program {
 
                 BeginMode2D(Camera.Viewport);
                     map.Render();
+                    var col = new Color(255, 255, 255, 125);
+                    DrawCircleV(Camera.Position, 8.0f, col);
+                    DrawEllipse((int)Camera.Position.X, (int)Camera.Position.Y + 80, 24.0f, 12.0f, col);
                 EndMode2D();
 
                 UI.Draw();

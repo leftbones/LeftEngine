@@ -38,7 +38,7 @@ static class UI {
         ImGui.SetNextWindowPos(new Vector2(10, 10));
         ImGui.SetNextWindowBgAlpha(0.5f);
         if (ImGui.Begin("Debug Info", ref showInfoOverlay, overlayFlags)) {
-            var mouseTile = Camera.GetCursorTilePos();
+            var mouseTile = Camera.GetCursorCellPos();
 
             ImGui.Text($"FPS: {GameWindow.FPS}");
             ImGui.Text($"Tile: {mouseTile.X}, {mouseTile.Y}");

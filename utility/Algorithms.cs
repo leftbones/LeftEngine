@@ -23,23 +23,6 @@ static class Algorithms {
         return lines; // This must NOT return a distinct list, it has to return ALL points
     }
 
-    public static List<Vector2> GetConePoints(Vector2 start, Vector2 end, int radius) {
-        List<Vector2> points = [];
-        float angleStep = 1.0f; // Increase step for less points but less accuracy
-
-        for (float angle = -radius / 2; angle <= radius / 2; angle += angleStep) {
-            float radian = MathF.PI * angle / 180.0f;
-            Vector2 direction = new(
-                MathF.Cos(radian) * (end.X - start.X) - MathF.Sin(radian) * (end.Y - start.Y),
-                MathF.Sin(radian) * (end.X - start.X) + MathF.Cos(radian) * (end.Y - start.Y)
-            );
-            Vector2 newEnd = start + direction;
-            points.AddRange(GetLinePoints(start, newEnd));
-        }
-
-        return points; // This must NOT return a distinct list, it has to return ALL points
-    }
-
     public static List<Vector2> GetLinePoints(Vector2 start, Vector2 end) {
         var points = new List<Vector2>();
 

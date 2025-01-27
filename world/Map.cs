@@ -88,7 +88,7 @@ class Map {
             var cursorPos = Camera.GetCursorCellPos();
             var endPoint = light.Position + Vector2.Normalize(cursorPos - light.Position) * light.Distance;
 
-            var coneLines = Algorithms.GetConeLines(light.Position, endPoint, 360);
+            var coneLines = Algorithms.GetConeLines(light.Position, endPoint, 90);
             var shadowPoints = new List<Vector2>();
 
             foreach (var line in coneLines) {
@@ -121,23 +121,6 @@ class Map {
                     }
                 }
             }
-
-            // var linePoints = Algorithms.GetConePoints(light.Position, endPoint, 45);
-            // var pointCache = new List<Vector2>();
-
-            // foreach (var point in linePoints) {
-            //     if (pointCache.Contains(point)) { continue; } // point has already been visited once
-
-            //     if (gridMap.GetCell(point, out Cell? cell)) {
-            //         float distance = Vector2.Distance(new Vector2(point.X, point.Y), light.Position);
-            //         byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * Width];
-            //         byte newLightLevel = (byte)Math.Clamp(currentLightLevel + (light.Intensity * (1 - (distance / light.Distance))), ambientLightLevel, 255);
-            //         lightMap[(int)point.X + (int)point.Y * Width] = newLightLevel;
-            //         pointCache.Add(point);
-
-            //         if (point == cursorPos) lightMap[(int)point.X + (int)point.Y * Width] = (byte)(ambientLightLevel / 2);
-            //     }
-            // }
         }
     }
 

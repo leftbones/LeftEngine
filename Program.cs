@@ -5,6 +5,7 @@ using static Raylib_cs.TraceLogLevel;
 
 using LeftEngine.Core;
 using LeftEngine.World;
+using LeftEngine.Utility;
 
 namespace LeftEngine;
 
@@ -27,7 +28,7 @@ class Program {
         );
 
         var playerPos = new Vector2(worldCenter.X + 32, worldCenter.Y + 16);
-        Camera.Target = playerPos;
+        Camera.JumpToPos(playerPos);
 
         // Main Loop
         while (!GameWindow.ShouldClose) {
@@ -42,10 +43,10 @@ class Program {
             if (Input.IsKeyPressed("escape")) { break; } // force close
 
             // Testing
-            if (Input.IsKeyDown("w")) { playerPos.Y -= 3; }
-            if (Input.IsKeyDown("s")) { playerPos.Y += 3; }
-            if (Input.IsKeyDown("a")) { playerPos.X -= 3; }
-            if (Input.IsKeyDown("d")) { playerPos.X += 3; }
+            if (Input.IsKeyDown("w")) { playerPos.Y -= 1.5f; }
+            if (Input.IsKeyDown("s")) { playerPos.Y += 1.5f; }
+            if (Input.IsKeyDown("a")) { playerPos.X -= 3.0f; }
+            if (Input.IsKeyDown("d")) { playerPos.X += 3.0f; }
 
             Camera.Target = playerPos;
 
@@ -56,8 +57,17 @@ class Program {
                 BeginMode2D(Camera.Viewport);
                     map.Render();
                     var col = new Color(255, 255, 255, 125);
-                    DrawCircleV(Camera.Position, 8.0f, col);
-                    DrawEllipse((int)Camera.Position.X, (int)Camera.Position.Y + 80, 24.0f, 12.0f, col);
+                    DrawCircleV(Camera.Position, 8.0f, col); // Player "head"
+                    DrawCircleV(Camera.Position + new Vector2(0, 40), 4.0f, col); // Player "center" (camera target)
+                    DrawEllipse((int)Camera.Position.X, (int)Camera.Position.Y + 80, 22.0f, 11.0f, col); // Player "feet"
+
+                    // Player cell position (absolute)
+                    var camPos = Algorithms.CellToPoint(Camera.GetCellPos());
+                    DrawEllipse((int)camPos.X, (int)camPos.Y, 16.0f, 8.0f, col);
+
+                    // Mouse position in world
+                    // var mousePos = Camera.GetCursorWorldPos();
+                    // DrawEllipse((int)mousePos.X, (int)mousePos.Y, 16.0f, 8.0f, Color.Red);
                 EndMode2D();
 
                 UI.Draw();

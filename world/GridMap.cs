@@ -32,6 +32,7 @@ class GridMap {
         }
     }
 
+    public bool InBounds(Vector2 pos) { return InBounds((int)pos.X, (int)pos.Y); }
     public bool InBounds(int x, int y) {
         return x >= 0 && x < Width && y >= 0 && y < Height;
     }

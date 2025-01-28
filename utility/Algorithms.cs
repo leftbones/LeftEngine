@@ -3,26 +3,42 @@ using System.Numerics;
 namespace LeftEngine.Utility;
 
 static class Algorithms {
-    public static List<List<Vector2>> GetConeLines(Vector2 start, Vector2 end, int radius) {
-        List<List<Vector2>> lines = [];
+    // Translate a point on screen to a cell position
+    public static Vector2 PointToCell(Vector2 point) {
+        var pos = new Vector2(
+            (float)Math.Round((point.X / 32 + point.Y / 16) / 2) - 1,
+            (float)Math.Round((point.Y / 16 - point.X / 32) / 2)
+        );
+        return pos;
+    }
+
+    // Translate a cell position to a point on screen
+    public static Vector2 CellToPoint(Vector2 cell) {
+        var pos = new Vector2(
+            ((cell.X - cell.Y) * 32) + 32,
+            ((cell.X + cell.Y) * 16) + 96
+        );
+        return pos;
+    }
+
+    // Get the points of an arc of a given radius in the direction of a start to end point
+    public static List<Vector2> GetArcPoints(Vector2 start, Vector2 end, int radius) {
+        List<Vector2> points = [];
         float angleStep = 1.0f; // Increase step for less points but less accuracy
 
         for (float angle = -radius / 2; angle <= radius / 2; angle += angleStep) {
-            var points = new List<Vector2>();
             float radian = MathF.PI * angle / 180.0f;
             Vector2 direction = new(
                 MathF.Cos(radian) * (end.X - start.X) - MathF.Sin(radian) * (end.Y - start.Y),
                 MathF.Sin(radian) * (end.X - start.X) + MathF.Cos(radian) * (end.Y - start.Y)
             );
-            Vector2 newEnd = start + direction;
-
-            points.AddRange(GetLinePoints(start, newEnd));
-            lines.Add(points);
+            points.Add(start + direction);
         }
 
-        return lines; // This must NOT return a distinct list, it has to return ALL points
+        return points;
     }
 
+    // Get the points of a line between two points
     public static List<Vector2> GetLinePoints(Vector2 start, Vector2 end) {
         var points = new List<Vector2>();
 

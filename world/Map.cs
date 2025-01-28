@@ -87,50 +87,63 @@ class Map {
             light.Position = Camera.GetCellPos();
             var cursorPos = Camera.GetCursorCellPos();
             var endPoint = light.Position + Vector2.Normalize(cursorPos - light.Position) * light.Distance;
+            var arcPoints = Algorithms.GetArcPoints(light.Position, endPoint, 90);
+            var pointCache = new List<Vector2>();
 
-            var coneLines = Algorithms.GetConeLines(light.Position, endPoint, 90);
-            var shadowPoints = new List<Vector2>();
+            var arcLeftHalf = arcPoints.GetRange(0, arcPoints.Count / 2).Reverse<Vector2>();
+            var arcRightHalf = arcPoints.GetRange(arcPoints.Count / 2, arcPoints.Count / 2);
 
-            foreach (var line in coneLines) {
-                foreach (var point in line) {
-                    if (shadowPoints.Contains(point)) { continue; } // point has been checked and is in shadow
-
+            foreach (var arcPoint in arcLeftHalf) {
+                var linePoints = Algorithms.GetLinePoints(light.Position, arcPoint);
+                foreach (var point in linePoints) {
                     if (gridMap.GetCell(point, out Cell? cell)) {
-                        // if the tile blocks vision, add the remaining points to the shadow list so it's not checked again
+                        float distance = Vector2.Distance(point, light.Position);
+                        byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * Width];
+                        byte newLightLevel = (byte)Math.Clamp(currentLightLevel + (light.Intensity * (1 - (distance / light.Distance))), ambientLightLevel, 255);
+                        lightMap[(int)point.X + (int)point.Y * Width] = newLightLevel;
+
                         if (cell!.Tiles.Last().BlockVision) {
-                            shadowPoints.AddRange(line.GetRange(line.IndexOf(point) + 1, line.Count - line.IndexOf(point) - 1));
+                            pointCache.AddRange(linePoints.GetRange(linePoints.IndexOf(point) + 1, linePoints.Count - linePoints.IndexOf(point) - 1));
                             break;
                         }
                     }
                 }
             }
 
-            var pointCache = new List<Vector2>();
-
-            foreach (var line in coneLines) {
-                foreach (var point in line) {
-                    if (pointCache.Contains(point)) { continue; } // point has already been visited once
-                    if (shadowPoints.Contains(point)) { continue; } // point is in shadow
-
+            foreach (var arcPoint in arcRightHalf) {
+                var linePoints = Algorithms.GetLinePoints(light.Position, arcPoint);
+                foreach (var point in linePoints) {
                     if (gridMap.GetCell(point, out Cell? cell)) {
-                        float distance = Vector2.Distance(new Vector2(point.X, point.Y), light.Position);
+                        float distance = Vector2.Distance(point, light.Position);
                         byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * Width];
                         byte newLightLevel = (byte)Math.Clamp(currentLightLevel + (light.Intensity * (1 - (distance / light.Distance))), ambientLightLevel, 255);
                         lightMap[(int)point.X + (int)point.Y * Width] = newLightLevel;
-                        pointCache.Add(point);
+
+                        if (cell!.Tiles.Last().BlockVision) {
+                            pointCache.AddRange(linePoints.GetRange(linePoints.IndexOf(point) + 1, linePoints.Count - linePoints.IndexOf(point) - 1));
+                            break;
+                        }
                     }
                 }
             }
+
+            // var testLinePoints = Algorithms.GetLinePoints(light.Position, endPoint);
+            // foreach (var point in testLinePoints) {
+            //     if (!gridMap.InBounds(point)) { break; };
+            //     lightMap[(int)point.X + (int)point.Y * Width] = 0;
+            // }
         }
     }
 
     // Render all tiles in the grid map
     public void Render() {
         UpdateLightmap();
-        var cursorPos = Camera.GetCursorCellPos();
+        var cursorCellPos = Camera.GetCursorCellPos();
 
         for (int x = 0; x < Width; x++) {
             for (int y = 0; y < Height; y++) {
+                var currentCellPos = new Vector2(x, y);
+
                 if (gridMap.GetCell(x, y, out Cell? cell)) {
                     var lightLevel = lightMap[x + y * Width] / 255f;
                     var tileColor = new Color(lightLevel, lightLevel, lightLevel);
@@ -143,6 +156,13 @@ class Map {
 
                         DrawTexture(texture, tileX, tileY - heightOffset, tileColor);
                         heightOffset += tile.Height;
+
+                        if (currentCellPos == cursorCellPos && heightOffset == 0) {
+                            var cursorPos = Algorithms.CellToPoint(cursorCellPos);
+                            cursorPos -= new Vector2(32, 96);
+                            DrawTextureV(AssetManager.Textures["cursor"], cursorPos + new Vector2(0, 2), Color.Black);
+                            DrawTextureV(AssetManager.Textures["cursor"], cursorPos, Color.White);
+                        }
                     }
                 }
             }

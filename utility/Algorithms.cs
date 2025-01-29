@@ -21,7 +21,7 @@ static class Algorithms {
         return pos;
     }
 
-    // Get the points of an arc of a given radius in the direction of a start to end point
+    // Get the points of an arc in the direction of start to end with a given radius
     public static List<Vector2> GetArcPoints(Vector2 start, Vector2 end, int radius) {
         List<Vector2> points = [];
         float angleStep = 1.0f; // Increase step for less points but less accuracy
@@ -38,7 +38,8 @@ static class Algorithms {
         return points;
     }
 
-    // Get the points of a line between two points
+
+    // Get the points of a RASTERIZED line between two points (cells are connected in cardinal directions)
     public static List<Vector2> GetLinePoints(Vector2 start, Vector2 end) {
         var points = new List<Vector2>();
 
@@ -66,6 +67,34 @@ static class Algorithms {
                 err += dx;
                 y0 += sy;
             }
+        }
+
+        return points;
+    }
+
+    // Get the points of an UNRASTERIZED line between two points (cells are connected in any direction)
+    public static List<Vector2> GetLinePoints2(Vector2 start, Vector2 end) {
+        var points = new List<Vector2>();
+
+        float x0 = start.X;
+        float y0 = start.Y;
+        float x1 = end.X;
+        float y1 = end.Y;
+
+        float dx = x1 - x0;
+        float dy = y1 - y0;
+        float steps = Math.Max(Math.Abs(dx), Math.Abs(dy));
+
+        float xIncrement = dx / steps;
+        float yIncrement = dy / steps;
+
+        float x = x0;
+        float y = y0;
+
+        for (int i = 0; i <= steps; i++) {
+            points.Add(new Vector2(x, y));
+            x += xIncrement;
+            y += yIncrement;
         }
 
         return points;

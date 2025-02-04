@@ -30,10 +30,10 @@ class Map {
         gridMap = new GridMap(width, height);
 
         // Test (create a center area of white tiles)
-        for (int x = 0; x < 9; x++) {
-            for (int y = 0; y < 9; y++) {
-                var cx = (int)Center.X - 4 + x;
-                var cy = (int)Center.Y - 4 + y;
+        for (int x = 0; x < 7; x++) {
+            for (int y = 0; y < 7; y++) {
+                var cx = (int)Center.X - 3 + x;
+                var cy = (int)Center.Y - 3 + y;
                 SetTile(cx, cy, 0, new Tile("white_tile"));
             }
         }
@@ -44,13 +44,21 @@ class Map {
             gridMap.AddTile(0, i, new Tile("wall_stone_w", blockVision: true));
         }
 
-        // Add some random crates
+        // Test (Add some random crates)
         for (int i = 0; i < 20; i++) {
             var cx = RNG.Range(0, width);
             var cy = RNG.Range(0, height);
             if (gridMap.GetCell(cx, cy, out Cell? cell)) { if (cell!.Tiles.Last().ID == "white_tile") { continue; } }
             gridMap.AddTile(cx, cy, new Tile("crate_wood", 29, blockVision: true));
         }
+
+        // Test (Add some crates in a line, with spaces between them)
+        // for (int i = 0; i < 15; i++) {
+        //     if (i % 2 == 0) { continue; }
+        //     int cx = (int)Center.X - 7 + i;
+        //     int cy = (int)Center.Y - 7;
+        //     gridMap.AddTile(cx, cy, new Tile("crate_wood", 29, blockVision: true));
+        // }
 
         // Build the light map
         lightMap = new byte[width * height];
@@ -59,7 +67,7 @@ class Map {
         }
 
         // Add a test light
-        lights.Add(new Light(Center, 255, 16));
+        lights.Add(new Light(Center, 255, 24));
     }
 
     // Set a tile at a given position
@@ -80,72 +88,28 @@ class Map {
         return gridMap.GetCell(x, y, out cell);
     }
 
-    // Update the lightMap array based on proximity to a light source
+    // Update the lightMap array for all lights
     public void UpdateLightmap() {
         Array.Fill(lightMap, ambientLightLevel);
+
         foreach (var light in lights) {
             light.Position = Camera.GetCellPos();
-            var cursorPos = Camera.GetCursorCellPos();
-            var endPoint = light.Position + Vector2.Normalize(cursorPos - light.Position) * light.Distance;
-            var arcPoints = Algorithms.GetArcPoints(light.Position, endPoint, 90);
-            var pointCache = new List<Vector2>();
-
-            var arcLeftHalf = arcPoints.GetRange(0, arcPoints.Count / 2).Reverse<Vector2>();
-            var arcRightHalf = arcPoints.GetRange(arcPoints.Count / 2, arcPoints.Count / 2);
-
-            foreach (var arcPoint in arcLeftHalf) {
-                var linePoints = Algorithms.GetLinePoints(light.Position, arcPoint);
-                foreach (var point in linePoints) {
-                    if (gridMap.GetCell(point, out Cell? cell)) {
-                        float distance = Vector2.Distance(point, light.Position);
-                        byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * Width];
-                        byte newLightLevel = (byte)Math.Clamp(currentLightLevel + (light.Intensity * (1 - (distance / light.Distance))), ambientLightLevel, 255);
-                        lightMap[(int)point.X + (int)point.Y * Width] = newLightLevel;
-
-                        if (cell!.Tiles.Last().BlockVision) {
-                            pointCache.AddRange(linePoints.GetRange(linePoints.IndexOf(point) + 1, linePoints.Count - linePoints.IndexOf(point) - 1));
-                            break;
-                        }
-                    }
-                }
-            }
-
-            foreach (var arcPoint in arcRightHalf) {
-                var linePoints = Algorithms.GetLinePoints(light.Position, arcPoint);
-                foreach (var point in linePoints) {
-                    if (gridMap.GetCell(point, out Cell? cell)) {
-                        float distance = Vector2.Distance(point, light.Position);
-                        byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * Width];
-                        byte newLightLevel = (byte)Math.Clamp(currentLightLevel + (light.Intensity * (1 - (distance / light.Distance))), ambientLightLevel, 255);
-                        lightMap[(int)point.X + (int)point.Y * Width] = newLightLevel;
-
-                        if (cell!.Tiles.Last().BlockVision) {
-                            pointCache.AddRange(linePoints.GetRange(linePoints.IndexOf(point) + 1, linePoints.Count - linePoints.IndexOf(point) - 1));
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // var testLinePoints = Algorithms.GetLinePoints(light.Position, endPoint);
-            // foreach (var point in testLinePoints) {
-            //     if (!gridMap.InBounds(point)) { break; };
-            //     lightMap[(int)point.X + (int)point.Y * Width] = 0;
-            // }
+            Lighting.ComputeLight(light, lightMap, gridMap, ambientLightLevel);
         }
     }
 
     // Render all tiles in the grid map
     public void Render() {
         UpdateLightmap();
-        var cursorCellPos = Camera.GetCursorCellPos();
 
+        // Render the tile map
+        var cursorCellPos = Camera.GetCursorCellPos();
         for (int x = 0; x < Width; x++) {
             for (int y = 0; y < Height; y++) {
                 var currentCellPos = new Vector2(x, y);
 
                 if (gridMap.GetCell(x, y, out Cell? cell)) {
-                    var lightLevel = lightMap[x + y * Width] / 255f;
+                    var lightLevel = lightMap[x + y * Width] / 255.0f;
                     var tileColor = new Color(lightLevel, lightLevel, lightLevel);
                     var heightOffset = 0;
 
@@ -158,10 +122,10 @@ class Map {
                         heightOffset += tile.Height;
 
                         if (currentCellPos == cursorCellPos && heightOffset == 0) {
-                            var cursorPos = Algorithms.CellToPoint(cursorCellPos);
-                            cursorPos -= new Vector2(32, 96);
-                            DrawTextureV(AssetManager.Textures["cursor"], cursorPos + new Vector2(0, 2), Color.Black);
-                            DrawTextureV(AssetManager.Textures["cursor"], cursorPos, Color.White);
+                            var cursorPoint = Algorithms.CellToPoint(cursorCellPos);
+                            cursorPoint -= new Vector2(32, 96);
+                            DrawTextureV(AssetManager.Textures["cursor"], cursorPoint + new Vector2(0, 2), Color.Black);
+                            DrawTextureV(AssetManager.Textures["cursor"], cursorPoint, Color.White);
                         }
                     }
                 }

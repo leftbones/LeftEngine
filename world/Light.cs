@@ -1,7 +1,7 @@
 using Raylib_cs;
 using System.Numerics;
 
-namespace LeftEngine.Core;
+namespace LeftEngine.World;
 
 class Light {
     public Vector2 Position { get; set; }

@@ -21,23 +21,64 @@ static class Algorithms {
         return pos;
     }
 
-    // Get the points of an arc in the direction of start to end with a given radius
-    public static List<Vector2> GetArcPoints(Vector2 start, Vector2 end, int radius) {
+    public static List<Vector2> GetCirclePoints(Vector2 origin, int radius) {
         List<Vector2> points = [];
-        float angleStep = 1.0f; // Increase step for less points but less accuracy
 
-        for (float angle = -radius / 2; angle <= radius / 2; angle += angleStep) {
-            float radian = MathF.PI * angle / 180.0f;
-            Vector2 direction = new(
-                MathF.Cos(radian) * (end.X - start.X) - MathF.Sin(radian) * (end.Y - start.Y),
-                MathF.Sin(radian) * (end.X - start.X) + MathF.Cos(radian) * (end.Y - start.Y)
-            );
-            points.Add(start + direction);
+        int x = 0;
+        int y = radius;
+        int d = 3 - 2 * radius;
+
+        points.Add(new Vector2(origin.X + radius, origin.Y));
+        points.Add(new Vector2(origin.X - radius, origin.Y));
+        points.Add(new Vector2(origin.X, origin.Y + radius));
+        points.Add(new Vector2(origin.X, origin.Y - radius));
+
+        while (y >= x) {
+            if (d > 0) {
+                y--;
+                d = d + 4 * (x - y) + 10;
+            } else {
+                d = d + 4 * x + 6;
+            }
+            x++;
+
+            points.Add(new Vector2(origin.X + x, origin.Y + y));
+            points.Add(new Vector2(origin.X - x, origin.Y + y));
+            points.Add(new Vector2(origin.X + x, origin.Y - y));
+            points.Add(new Vector2(origin.X - x, origin.Y - y));
+            points.Add(new Vector2(origin.X + y, origin.Y + x));
+            points.Add(new Vector2(origin.X - y, origin.Y + x));
+            points.Add(new Vector2(origin.X + y, origin.Y - x));
+            points.Add(new Vector2(origin.X - y, origin.Y - x));
         }
 
         return points;
     }
 
+    public static List<Vector2> TrimCircle(List<Vector2> points, Vector2 origin, int angle, int size) {
+        List<Vector2> newPoints = [];
+        int angleStart = (angle - size / 2 + 360) % 360;
+        int angleEnd = (angle + size / 2 + 360) % 360;
+
+        foreach (var point in points) {
+            var a = Math.Atan2(point.Y - origin.Y, point.X - origin.X) * (180 / Math.PI);
+            if (a < 0) {
+                a += 360;
+            }
+
+            if (angleStart <= angleEnd) {
+                if (a >= angleStart && a <= angleEnd) {
+                    newPoints.Add(point);
+                }
+            } else {
+                if (a >= angleStart || a <= angleEnd) {
+                    newPoints.Add(point);
+                }
+            }
+        }
+
+        return newPoints;
+    }
 
     // Get the points of a RASTERIZED line between two points (cells are connected in cardinal directions)
     public static List<Vector2> GetLinePoints(Vector2 start, Vector2 end) {

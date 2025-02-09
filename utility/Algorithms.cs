@@ -3,6 +3,16 @@ using System.Numerics;
 namespace LeftEngine.Utility;
 
 static class Algorithms {
+    // Get the cardinal direction from one point to another
+    public static Vector2 GetDirection(Vector2 start, Vector2 end) {
+        Vector2 delta = end - start;
+        if (Math.Abs(delta.X) > Math.Abs(delta.Y)) {
+            return delta.X > 0 ? new Vector2(1, 0) : new Vector2(-1, 0);
+        } else {
+            return delta.Y > 0 ? new Vector2(0, 1) : new Vector2(0, -1);
+        }
+    }
+
     // Translate a point on screen to a cell position
     public static Vector2 PointToCell(Vector2 point) {
         var pos = new Vector2(

@@ -30,6 +30,8 @@ class Program {
         var playerPos = new Vector2(worldCenter.X + 32, worldCenter.Y + 16);
         Camera.JumpToPos(playerPos);
 
+        var playerSpeed = 3.0f;
+
         // Main Loop
         while (!GameWindow.ShouldClose) {
             var DT = GetFrameTime();
@@ -43,10 +45,12 @@ class Program {
             if (Input.IsKeyPressed("escape")) { break; } // force close
 
             // Testing
-            if (Input.IsKeyDown("w")) { playerPos.Y -= 1.5f; }
-            if (Input.IsKeyDown("s")) { playerPos.Y += 1.5f; }
-            if (Input.IsKeyDown("a")) { playerPos.X -= 3.0f; }
-            if (Input.IsKeyDown("d")) { playerPos.X += 3.0f; }
+            var adjSpeed = playerSpeed;
+            if (Input.IsKeyDown("l_shift")) { adjSpeed *= 2; }
+            if (Input.IsKeyDown("w")) { playerPos.Y -= adjSpeed / 2; }
+            if (Input.IsKeyDown("s")) { playerPos.Y += adjSpeed / 2; }
+            if (Input.IsKeyDown("a")) { playerPos.X -= adjSpeed; }
+            if (Input.IsKeyDown("d")) { playerPos.X += adjSpeed; }
 
             Camera.Target = playerPos;
 

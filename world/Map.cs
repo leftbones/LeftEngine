@@ -57,6 +57,11 @@ class Map {
             gridMap.AddTile(0, i, new Tile("wall_stone_w", tags: TileTags.BlockVisionEW));
         }
 
+        // Test (add a western wall to the white tile area)
+        for (int i = 0; i < 7; i++) {
+            gridMap.AddTile((int)Center.X - 3, (int)Center.Y - 3 + i, new Tile("wall_stone_w", tags: TileTags.BlockVisionEW));
+        }
+
         // Test (Add some random crates)
         // for (int i = 0; i < 25; i++) {
         //     var cx = RNG.Range(0, width);
@@ -68,10 +73,10 @@ class Map {
 
         // Add some test lights
         lights.Add(new Light(Center, 255, 20, 150)); // "Player" FOV
-        lights.Add(new Light(new Vector2(0, 0), 100, 8));
-        lights.Add(new Light(new Vector2(Width - 1, Height - 1), 100, 8));
-        lights.Add(new Light(new Vector2(0, Height - 1), 100, 8));
-        lights.Add(new Light(new Vector2(Width - 1, 0), 100, 8));
+        // lights.Add(new Light(new Vector2(0, 0), 100, 8));
+        // lights.Add(new Light(new Vector2(Width - 1, Height - 1), 100, 8));
+        // lights.Add(new Light(new Vector2(0, Height - 1), 100, 8));
+        // lights.Add(new Light(new Vector2(Width - 1, 0), 100, 8));
 
         // ========================================================================================================
     }
@@ -158,57 +163,59 @@ class Map {
         }
 
         // Lighting Testing
-        Vector2 North = new ( 0, -1);
-        Vector2 South = new ( 0,  1);
-        Vector2 East =  new ( 1,  0);
-        Vector2 West =  new (-1,  0);
-        foreach (var light in lights) {
-            var angleDirection = Math.Atan2(light.Direction.Y, light.Direction.X) * (180 / Math.PI);
-            var circlePoints = Algorithms.GetCirclePoints(light.Position, light.Length);
-            var arcPoints = light.Angle == 360 ? circlePoints : Algorithms.TrimCircle(circlePoints, light.Position, (int)angleDirection, light.Angle); // Only trim the circle if the angle is less than 360
+        // Vector2 North = new ( 0, -1);
+        // Vector2 South = new ( 0,  1);
+        // Vector2 East =  new ( 1,  0);
+        // Vector2 West =  new (-1,  0);
+        // foreach (var light in lights) {
+        //     var angleDirection = Math.Atan2(light.Direction.Y, light.Direction.X) * (180 / Math.PI);
+        //     var circlePoints = Algorithms.GetCirclePoints(light.Position, light.Length);
+        //     var arcPoints = light.Angle == 360 ? circlePoints : Algorithms.TrimCircle(circlePoints, light.Position, (int)angleDirection, light.Angle); // Only trim the circle if the angle is less than 360
 
-            var pointCache = new List<Vector2>();
-            for (int i = 0; i < arcPoints.Count - 1; i++) {
-                var testPoints = new List<Vector2>();
-                var drawTestLine = false;
+        //     var pointCache = new List<Vector2>();
+        //     for (int i = 0; i < arcPoints.Count - 1; i++) {
+        //         var testPoints = new List<Vector2>();
+        //         var drawTestLine = false;
 
-                var linePoints = Algorithms.GetLinePoints(light.Position, arcPoints[i]);
-                foreach (var point in linePoints) {
-                    if (gridMap.GetCell(point, out Cell? cell)) {
-                        testPoints.Add(point);
+        //         var linePoints = Algorithms.GetLinePoints(light.Position, arcPoints[i]);
+        //         for (int j = 1; j < linePoints.Count; j++) {
+        //             var point = linePoints[j];
+        //             if (gridMap.GetCell(point, out Cell? cell)) {
+        //                 testPoints.Add(point);
 
-                        if (!pointCache.Contains(point)) {
-                            pointCache.Add(point);
-                        }
+        //                 if (!pointCache.Contains(point)) {
+        //                     pointCache.Add(point);
+        //                 }
 
-                        if (cell!.Tiles.Last().Tags.HasFlag(TileTags.BlockVision)) { drawTestLine = true; break; } // Tile blocks vision from all directions
+        //                 var castDirection = Algorithms.GetDirection(linePoints[j - 1], point);
+        //                 var dirPoint = point + castDirection;
 
-                        var nextPoint = i + 1 < linePoints.Count ? linePoints[i + 1] : linePoints.Last();
-                        var castDirection = Algorithms.GetDirection(point, nextPoint);
+        //                 if (cell!.Tiles.Last().Tags.HasFlag(TileTags.BlockVision)) { drawTestLine = true; break; } // Tile blocks vision from all directions
 
-                        var dirPoint = point + castDirection;
+        //                 if (castDirection == North || castDirection == South) {
+        //                     if (cell.Tiles.Last().Tags.HasFlag(TileTags.BlockVisionNS)) { testPoints.Add(dirPoint); drawTestLine = true; break; }
+        //                 }
 
-                        if (castDirection == North || castDirection == South) {
-                            if (cell.Tiles.Last().Tags.HasFlag(TileTags.BlockVisionNS)) { testPoints.Add(dirPoint); drawTestLine = true; break; }
-                        }
+        //                 if (castDirection == East || castDirection == West) {
+        //                     if (cell.Tiles.Last().Tags.HasFlag(TileTags.BlockVisionEW)) { testPoints.Add(dirPoint); drawTestLine = true; break; }
+        //                 }
+        //             } else { break; }
+        //         }
 
-                        if (castDirection == East || castDirection == West) {
-                            if (cell.Tiles.Last().Tags.HasFlag(TileTags.BlockVisionEW)) { testPoints.Add(dirPoint); drawTestLine = true; break; }
-                        }
-                    } else { drawTestLine = true; break; }
-                }
+        //         if (drawTestLine) {
+        //             for (int j = 1; j < testPoints.Count; j++) {
+        //                 var lineStart = Algorithms.CellToPoint(testPoints[j - 1]);
+        //                 var lineEnd = Algorithms.CellToPoint(testPoints[j]);
+        //                 DrawLineV(lineStart, lineEnd, Color.White);
 
-                if (drawTestLine) {
-                    for (int j = 1; j < testPoints.Count; j++) {
-                        var lineStart = Algorithms.CellToPoint(testPoints[j - 1]);
-                        var lineEnd = Algorithms.CellToPoint(testPoints[j]);
-                        DrawLineV(lineStart, lineEnd, Color.White);
-                    }
+        //                 // Console.WriteLine(testPoints.Count);
+        //                 // Console.WriteLine(testDirs.Count);
+        //             }
 
-                    var lastPoint = Algorithms.CellToPoint(testPoints.Last());
-                    DrawCircleV(lastPoint, 4, Color.White);
-                }
-            }
-        }
+        //             var lastPoint = Algorithms.CellToPoint(testPoints.Last());
+        //             DrawCircleV(lastPoint, 4, Color.White);
+        //         }
+        //     }
+        // }
     }
 }

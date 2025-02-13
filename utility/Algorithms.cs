@@ -122,32 +122,4 @@ static class Algorithms {
 
         return points;
     }
-
-    // Get the points of an UNRASTERIZED line between two points (cells are connected in any direction)
-    public static List<Vector2> GetLinePoints2(Vector2 start, Vector2 end) {
-        var points = new List<Vector2>();
-
-        float x0 = start.X;
-        float y0 = start.Y;
-        float x1 = end.X;
-        float y1 = end.Y;
-
-        float dx = x1 - x0;
-        float dy = y1 - y0;
-        float steps = Math.Max(Math.Abs(dx), Math.Abs(dy));
-
-        float xIncrement = dx / steps;
-        float yIncrement = dy / steps;
-
-        float x = x0;
-        float y = y0;
-
-        for (int i = 0; i <= steps; i++) {
-            points.Add(new Vector2(x, y));
-            x += xIncrement;
-            y += yIncrement;
-        }
-
-        return points;
-    }
 }

@@ -47,19 +47,19 @@ class Map {
             for (int y = 0; y < 7; y++) {
                 var cx = (int)Center.X - 3 + x;
                 var cy = (int)Center.Y - 3 + y;
-                SetTile(cx, cy, 0, new Tile("white_tile"));
+                SetTile(cx, cy, 0, new Tile("white_tile") { IsFloor = true });
             }
         }
 
         // Test (add walls to the north and west sides of the map)
         for (int i = 0; i < width; i++) {
-            gridMap.AddTile(i, 0, new Tile("wall_stone_n", tags: TileTags.BlockVisionNS));
-            gridMap.AddTile(0, i, new Tile("wall_stone_w", tags: TileTags.BlockVisionEW));
+            gridMap.AddTile(i, 0, new Tile("wall_stone_n") { IsWall = true, BlockVisionNS = true });
+            gridMap.AddTile(0, i, new Tile("wall_stone_w") { IsWall = true, BlockVisionEW = true });
         }
 
         // Test (add a western wall to the white tile area)
         for (int i = 0; i < 7; i++) {
-            gridMap.AddTile((int)Center.X - 3, (int)Center.Y - 3 + i, new Tile("wall_stone_w", tags: TileTags.BlockVisionEW));
+            gridMap.AddTile((int)Center.X - 3, (int)Center.Y - 3 + i, new Tile("wall_stone_w") { IsWall = true, BlockVisionEW = true });
         }
 
         // Test (Add some random crates)
@@ -67,8 +67,7 @@ class Map {
         //     var cx = RNG.Range(0, width);
         //     var cy = RNG.Range(0, height);
         //     if (gridMap.GetCell(cx, cy, out Cell? cell)) { if (cell!.Tiles.Last().ID == "white_tile") { continue; } }
-        //     var tile = new Tile("crate_wood", 29);
-        //     gridMap.AddTile(cx, cy, new Tile("crate_wood", 29, tags: TileTags.BlockVision | TileTags.BlockMovement));
+        //     gridMap.AddTile(cx, cy, new Tile("crate_wood") { Height = 29, BlockVisionNS = true, BlockVisionEW = true, BlockMovementNS = true, BlockMovementEW = true });
         // }
 
         // Add some test lights
@@ -156,66 +155,103 @@ class Map {
 
         // Render debug icons
         for (int i = 1; i < lights.Count; i++) {
-            var light = lights[i];
+            var lightSource = lights[i];
             var iconTexture = AssetManager.Icons["lightbulb"];
-            var lightPos = Algorithms.CellToPoint(light.Position) - new Vector2(Global.TileSize.X / 2, iconTexture.Height); 
-            DrawTextureV(iconTexture, lightPos, light.Color);
+            var lightPos = Algorithms.CellToPoint(lightSource.Position) - new Vector2(Global.TileSize.X / 2, iconTexture.Height); 
+            DrawTextureV(iconTexture, lightPos, lightSource.Color);
         }
 
-        // Lighting Testing
-        // Vector2 North = new ( 0, -1);
-        // Vector2 South = new ( 0,  1);
-        // Vector2 East =  new ( 1,  0);
-        // Vector2 West =  new (-1,  0);
-        // foreach (var light in lights) {
-        //     var angleDirection = Math.Atan2(light.Direction.Y, light.Direction.X) * (180 / Math.PI);
-        //     var circlePoints = Algorithms.GetCirclePoints(light.Position, light.Length);
-        //     var arcPoints = light.Angle == 360 ? circlePoints : Algorithms.TrimCircle(circlePoints, light.Position, (int)angleDirection, light.Angle); // Only trim the circle if the angle is less than 360
+        // Lighting Debugging
+        Vector2 North = new ( 0, -1);
+        Vector2 South = new ( 0,  1);
+        Vector2 East =  new ( 1,  0);
+        Vector2 West =  new (-1,  0);
+        var tileTexture = AssetManager.Textures["white_tile"];
+        var light = lights[0];
 
-        //     var pointCache = new List<Vector2>();
-        //     for (int i = 0; i < arcPoints.Count - 1; i++) {
-        //         var testPoints = new List<Vector2>();
-        //         var drawTestLine = false;
+        var angleDirection = Math.Atan2(light.Direction.Y, light.Direction.X) * (180 / Math.PI);
+        var circlePoints = Algorithms.GetCirclePoints(light.Position, light.Length);
+        var arcPoints = light.Angle == 360 ? circlePoints : Algorithms.TrimCircle(circlePoints, light.Position, (int)angleDirection, light.Angle); // Only trim the circle if the angle is less than 360
 
-        //         var linePoints = Algorithms.GetLinePoints(light.Position, arcPoints[i]);
-        //         for (int j = 1; j < linePoints.Count; j++) {
-        //             var point = linePoints[j];
-        //             if (gridMap.GetCell(point, out Cell? cell)) {
-        //                 testPoints.Add(point);
+        var lightMapChanges = new byte[lightMap.Length];
+        lightMap.CopyTo(lightMapChanges, 0);
 
-        //                 if (!pointCache.Contains(point)) {
-        //                     pointCache.Add(point);
-        //                 }
+        var pointCache = new List<Vector2>();
+        for (int i = 0; i < arcPoints.Count; i++) {
+            var testPoints = new List<Vector2>();  
+            var drawLine = false;
 
-        //                 var castDirection = Algorithms.GetDirection(linePoints[j - 1], point);
-        //                 var dirPoint = point + castDirection;
+            var linePoints = Algorithms.GetLinePoints(light.Position, arcPoints[i]);
+            var breakPoint = linePoints.First();
 
-        //                 if (cell!.Tiles.Last().Tags.HasFlag(TileTags.BlockVision)) { drawTestLine = true; break; } // Tile blocks vision from all directions
+            for (int j = 0; j < linePoints.Count - 1; j++) {
+                var point = linePoints[j];
+                testPoints.Add(point);
+                if (!gridMap.InBounds(point)) { continue; }
 
-        //                 if (castDirection == North || castDirection == South) {
-        //                     if (cell.Tiles.Last().Tags.HasFlag(TileTags.BlockVisionNS)) { testPoints.Add(dirPoint); drawTestLine = true; break; }
-        //                 }
+                breakPoint = point;
 
-        //                 if (castDirection == East || castDirection == West) {
-        //                     if (cell.Tiles.Last().Tags.HasFlag(TileTags.BlockVisionEW)) { testPoints.Add(dirPoint); drawTestLine = true; break; }
-        //                 }
-        //             } else { break; }
-        //         }
+                float distance = Vector2.Distance(point, light.Position);
+                byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * gridMap.Width];
+                byte newLightLevel = (byte)Math.Clamp(currentLightLevel + light.Intensity * (1 - (distance / light.Length)), ambientLightLevel, 255);
 
-        //         if (drawTestLine) {
-        //             for (int j = 1; j < testPoints.Count; j++) {
-        //                 var lineStart = Algorithms.CellToPoint(testPoints[j - 1]);
-        //                 var lineEnd = Algorithms.CellToPoint(testPoints[j]);
-        //                 DrawLineV(lineStart, lineEnd, Color.White);
+                lightMapChanges[(int)point.X + (int)point.Y * gridMap.Width] = newLightLevel;
 
-        //                 // Console.WriteLine(testPoints.Count);
-        //                 // Console.WriteLine(testDirs.Count);
-        //             }
+                if (gridMap.GetCell(point, out Cell? cell)) {
+                    var lastTile = cell!.Tiles.Last();
+                    var direction = Algorithms.GetDirection(point, linePoints[j + 1]);
 
-        //             var lastPoint = Algorithms.CellToPoint(testPoints.Last());
-        //             DrawCircleV(lastPoint, 4, Color.White);
-        //         }
-        //     }
-        // }
+                    if (lastTile.BlockVision) { drawLine = true; break; }
+
+                    if (lastTile.BlockVisionNS) {
+                        if (direction == North) { drawLine = true; break; }
+                    }
+
+                    if (lastTile.BlockVisionEW) {
+
+                    }
+                }
+            }
+
+            // Draw the test line (only if the light was blocked)
+            if (drawLine && cursorCellPos == breakPoint) {
+                var lineColor = new Color(25, 100, 200, 255);
+                var endColor = new Color(255, 0, 0, 255);
+
+                float x, y;
+                foreach (var point in testPoints) {
+                    x = ((int)point.X - (int)point.Y) * Global.GridSize.X;
+                    y = ((int)point.X + (int)point.Y) * Global.GridSize.Y;
+                    DrawTexture(tileTexture, (int)x, (int)y, lineColor);
+                }
+
+                x = ((int)breakPoint.X - (int)breakPoint.Y) * Global.GridSize.X;
+                y = ((int)breakPoint.X + (int)breakPoint.Y) * Global.GridSize.Y;
+
+                DrawTexture(tileTexture, (int)x, (int)y, lineColor);
+
+                DrawText($"{breakPoint}", (int)x + 17, (int)y + 17, 10, Color.Black);
+                DrawText($"{breakPoint}", (int)x + 16, (int)y + 16, 10, lineColor);
+
+                if (breakPoint == linePoints.Last()) { continue; }
+
+                var pointAfterBreak = linePoints[linePoints.IndexOf(breakPoint) + 1];
+                x = ((int)pointAfterBreak.X - (int)pointAfterBreak.Y) * Global.GridSize.X;
+                y = ((int)pointAfterBreak.X + (int)pointAfterBreak.Y) * Global.GridSize.Y;
+
+                DrawTexture(tileTexture, (int)x, (int)y, endColor);
+                DrawText($"{pointAfterBreak}", (int)x + 17, (int)y + 17, 10, Color.Black);
+                DrawText($"{pointAfterBreak}", (int)x + 16, (int)y + 16, 10, endColor);
+
+                var direction = Algorithms.GetDirection(breakPoint, pointAfterBreak);
+                DrawText($"{direction}", (int)x + 33, (int)y + 65, 10, Color.Black);
+                DrawText($"{direction}", (int)x + 32, (int)y + 64, 10, Color.Yellow);
+            }
+        }
+
+        foreach (var ap in arcPoints) {
+            var pos = Algorithms.CellToPoint(ap);
+            DrawCircleV(pos, 4, Color.Red);
+        }
     }
 }

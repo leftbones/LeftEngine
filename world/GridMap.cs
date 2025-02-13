@@ -26,7 +26,7 @@ class GridMap {
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                var t = new Tile("wood_floor");
+                var t = new Tile("wood_floor") { IsFloor = true };
                 SetTile(x, y, 0, t);
             }
         }

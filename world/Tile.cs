@@ -1,26 +1,26 @@
 namespace LeftEngine.World;
 
-public enum TileTags {
-    None,
-    BlockVision,
-    BlockVisionNS,
-    BlockVisionEW,
-    BlockMovement,
-    BlockMovementNS,
-    BlockMovementEW,
+public enum WallType {
+
 };
 
 class Tile {
-    public string ID { get; private set; }
-    public int Height { get; private set; }
-    public int MaxHeight { get; private set; }
+    public string ID { get; set; }
 
-    public TileTags Tags { get; set; }
+    // Tile Properties
+    public int      Height { get; set; }            = 0;        // Pixel height of the tile, used to offset tiles on top of it
+    public bool     IsFloor { get; set; }           = false;    // Tile is a floor tile
+    public bool     IsWall { get; set; }            = false;    // Tile is a wall tile
+    public bool     BlockVisionNS { get; set; }     = false;    // Tile blocks vision to the north and south
+    public bool     BlockVisionEW { get; set; }     = false;    // Tile blocks vision to the east and west
+    public bool     BlockMovementNS { get; set; }   = false;    // Tile blocks movement to the north and south
+    public bool     BlockMovementEW { get; set; }   = false;    // Tile blocks movement to the east and west
 
-    public Tile(string id, int height=0, int maxHeight=999, TileTags tags=TileTags.None) {
+    // Convenience Properties (read only)
+    public bool     BlockVision => BlockVisionNS && BlockVisionEW;          // Tile blocks vision from all directions
+    public bool     BlockMovement => BlockMovementNS && BlockMovementEW;    // Tile blocks movement from all directions
+
+    public Tile(string id) {
         ID = id;
-        Height = height;
-        MaxHeight = maxHeight;
-        Tags = tags;
     }
 }

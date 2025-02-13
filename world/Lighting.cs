@@ -23,14 +23,10 @@ namespace LeftEngine.World;
 // - Softer shadows using a shader or a light texture maybe? Not sure how to project texture to isometric in 2D yet (currently shadows cover an entire tile)
 // - "Realistic" shadows using a shader, like the method Chaos did but in glsl (shadows that are not blocky)
 
-// This may not be the best way:
-// the tile that the light is ON should not be able to block the light from moving to adjacent tiles
-// basically when checking a point, check the point that the light is moving to, not the point that the light is on
-// if the point that the light is moving to is blocked, that tile should be illuminated, then the light should stop
 
-// FIX THE DIRECTIONAL ISSUES BEFORE DOING THIS:
-// new issue: light bleeds through walls depending on direction
-// potential fix: don't illuminate blocking tiles if the light is coming from the north or west
+// Current issue:
+// There's "holes" in the light at certain angles causing shadows to appear on walls where they shouldn't
+// Unsure if using Array.Copy is slower than using a point cache, but it's less code
 
 static class Lighting {
     public static readonly Vector2 North = new ( 0, -1);
@@ -39,44 +35,47 @@ static class Lighting {
     public static readonly Vector2 West =  new (-1,  0);
 
     public static void ComputeLight(Light light, byte[] lightMap, GridMap gridMap, byte ambientLightLevel) {
-        var sourceCellLightLevel = lightMap[(int)light.Position.X + (int)light.Position.Y * gridMap.Width];
-        lightMap[(int)light.Position.X + (int)light.Position.Y * gridMap.Width] = (byte)Math.Min(sourceCellLightLevel + light.Intensity, 255);
+        var lightMapChanges = new byte[lightMap.Length];
+        lightMap.CopyTo(lightMapChanges, 0);
 
         var angleDirection = Math.Atan2(light.Direction.Y, light.Direction.X) * (180 / Math.PI);
         var circlePoints = Algorithms.GetCirclePoints(light.Position, light.Length);
         var arcPoints = light.Angle == 360 ? circlePoints : Algorithms.TrimCircle(circlePoints, light.Position, (int)angleDirection, light.Angle); // Only trim the circle if the angle is less than 360
 
-        var pointCache = new List<Vector2>();
-        for (int i = 0; i < arcPoints.Count - 1; i++) {
+        if (light.Angle == 1) {
+            arcPoints = [light.Position + light.Direction * light.Length];
+        }
+
+        for (int i = 0; i < arcPoints.Count; i++) {
             var linePoints = Algorithms.GetLinePoints(light.Position, arcPoints[i]);
 
-            for (int j = 1; j < linePoints.Count - 1; j++) {
+            for (int j = 0; j < linePoints.Count - 1; j++) {
                 var point = linePoints[j];
+                if (!gridMap.InBounds(point)) { continue; } // is this a problem?
+
+                float distance = Vector2.Distance(point, light.Position);
+                byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * gridMap.Width];
+                byte newLightLevel = (byte)Math.Clamp(currentLightLevel + light.Intensity * (1 - (distance / light.Length)), ambientLightLevel, 255);
+
+                lightMapChanges[(int)point.X + (int)point.Y * gridMap.Width] = newLightLevel;
 
                 if (gridMap.GetCell(point, out Cell? cell)) {
-                    if (!pointCache.Contains(point)) {
-                        float distance = Vector2.Distance(point, light.Position);
-                        byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * gridMap.Width];
-                        byte newLightLevel = (byte)Math.Clamp(currentLightLevel + light.Intensity * (1 - (distance / light.Length)), ambientLightLevel, 255);
+                    var lastTile = cell!.Tiles.Last();
+                    var direction = Algorithms.GetDirection(point, linePoints[j + 1]);
 
-                        lightMap[(int)point.X + (int)point.Y * gridMap.Width] = newLightLevel;
+                    if (lastTile.BlockVision) { break; }
 
-                        pointCache.Add(point);
+                    if (lastTile.BlockVisionNS) {
+                        if (direction == North) { break; }
                     }
 
-                    if (cell!.Tiles.Last().Tags.HasFlag(TileTags.BlockVision)) { break; } // Tile blocks vision from all directions
-
-                    var castDirection = Algorithms.GetDirection(linePoints[j - 1], point);
-
-                    if (castDirection == North || castDirection == South) {
-                        if (cell.Tiles.Last().Tags.HasFlag(TileTags.BlockVisionNS)) { break; }
+                    if (lastTile.BlockVisionEW) {
+                        if (direction == West) { break; }
                     }
-
-                    if (castDirection == East || castDirection == West) {
-                        if (cell.Tiles.Last().Tags.HasFlag(TileTags.BlockVisionEW)) { Console.WriteLine($"Block at {point}"); break; }
-                    }
-                } else { break; }
+                }
             }
         }
+
+        lightMapChanges.CopyTo(lightMap, 0);
     }
 }

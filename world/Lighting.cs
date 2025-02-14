@@ -23,10 +23,9 @@ namespace LeftEngine.World;
 // - Softer shadows using a shader or a light texture maybe? Not sure how to project texture to isometric in 2D yet (currently shadows cover an entire tile)
 // - "Realistic" shadows using a shader, like the method Chaos did but in glsl (shadows that are not blocky)
 
+// What to do next:
+// - Refactor the ComputeLight method to return a list of tiles reached by the light rather than actually making any changes, that way it can also be used for FOV calculation
 
-// Current issue:
-// There's "holes" in the light at certain angles causing shadows to appear on walls where they shouldn't
-// Unsure if using Array.Copy is slower than using a point cache, but it's less code
 
 static class Lighting {
     public static readonly Vector2 North = new ( 0, -1);
@@ -34,7 +33,7 @@ static class Lighting {
     public static readonly Vector2 East =  new ( 1,  0);
     public static readonly Vector2 West =  new (-1,  0);
 
-    public static void ComputeLight(Light light, byte[] lightMap, GridMap gridMap, byte ambientLightLevel) {
+    public static void ComputeFOV(Light light, byte[] lightMap, GridMap gridMap, byte ambientLightLevel) {
         var lightMapChanges = new byte[lightMap.Length];
         lightMap.CopyTo(lightMapChanges, 0);
 
@@ -51,7 +50,7 @@ static class Lighting {
 
             for (int j = 0; j < linePoints.Count - 1; j++) {
                 var point = linePoints[j];
-                if (!gridMap.InBounds(point)) { continue; } // is this a problem?
+                if (!gridMap.InBounds(point)) { continue; }
 
                 float distance = Vector2.Distance(point, light.Position);
                 byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * gridMap.Width];
@@ -59,20 +58,16 @@ static class Lighting {
 
                 lightMapChanges[(int)point.X + (int)point.Y * gridMap.Width] = newLightLevel;
 
-                if (gridMap.GetCell(point, out Cell? cell)) {
-                    var lastTile = cell!.Tiles.Last();
-                    var direction = Algorithms.GetDirection(point, linePoints[j + 1]);
+                var nextPoint = linePoints[j + 1];
+                var direction = Algorithms.GetDirection(point, nextPoint);
 
-                    if (lastTile.BlockVision) { break; }
+                gridMap.GetCell(point, out Cell? currCell);
+                gridMap.GetCell(nextPoint, out Cell? nextCell);
 
-                    if (lastTile.BlockVisionNS) {
-                        if (direction == North) { break; }
-                    }
-
-                    if (lastTile.BlockVisionEW) {
-                        if (direction == West) { break; }
-                    }
-                }
+                if (direction == North && currCell!.Tiles.Last().BlockVisionNS) { break; }
+                else if (direction == West && currCell!.Tiles.Last().BlockVisionEW) { break; }
+                else if (direction == South && nextCell != null && nextCell!.Tiles.Last().BlockVisionNS) { break; }
+                else if (direction == East && nextCell != null && nextCell!.Tiles.Last().BlockVisionEW) { break; }
             }
         }
 

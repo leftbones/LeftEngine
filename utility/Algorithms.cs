@@ -4,6 +4,7 @@ namespace LeftEngine.Utility;
 
 static class Algorithms {
     // Get the cardinal direction from one point to another
+    // FIXME: I think I'm stupid and this is completely unnecessary
     public static Vector2 GetDirection(Vector2 start, Vector2 end) {
         Vector2 delta = end - start;
         if (Math.Abs(delta.X) > Math.Abs(delta.Y)) {

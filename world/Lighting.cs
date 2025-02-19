@@ -12,19 +12,15 @@ namespace LeftEngine.World;
 // - The light level of each cell is calculated based on the distance from each light source
 
 // Known Issues:
-// - Certain cells look like they should be occluded but are not (may not be a bug)
-// - Sometimes a wall will be shadowed even though it shouldn't be due to the wall next to it "blocking" it
-// - A light source that is placed in a corner is blocked incorrectly
+// - None?
 
 // Features to add:
-// - Support for colored lights and color mixing (the light map would need to be a Color array instead of a byte array)
-// - Support for light sources that flicker or move
-// - Light falloff at the edges of a light cone (currently the cones have hard edges)
-// - Softer shadows using a shader or a light texture maybe? Not sure how to project texture to isometric in 2D yet (currently shadows cover an entire tile)
-// - "Realistic" shadows using a shader, like the method Chaos did but in glsl (shadows that are not blocky)
-
-// What to do next:
-// - Refactor the ComputeLight method to return a list of tiles reached by the light rather than actually making any changes, that way it can also be used for FOV calculation
+// - High Priority:
+//      - Light falloff at the edges of a light cone (currently the cones have hard edges)
+//      - Softer shadows using a shader or a light texture maybe? Not sure how to project texture to isometric in 2D yet (currently shadows cover an entire tile)
+// - Low Priority:
+//      - Support for colored lights and color mixing (the light map would need to be a Color array instead of a byte array)
+//      - "Realistic" shadows using a shader, like the method Chaos did but in glsl (shadows that are not blocky)
 
 
 static class Lighting {
@@ -33,44 +29,44 @@ static class Lighting {
     public static readonly Vector2 East =  new ( 1,  0);
     public static readonly Vector2 West =  new (-1,  0);
 
-    public static void ComputeFOV(Light light, byte[] lightMap, GridMap gridMap, byte ambientLightLevel) {
-        var lightMapChanges = new byte[lightMap.Length];
-        lightMap.CopyTo(lightMapChanges, 0);
+    public static bool[] ComputeFOV(GridMap gridMap, Vector2 position, int length, int angle, Vector2 direction) {
+        var visibleCells = new bool[gridMap.Width * gridMap.Height];
 
-        var angleDirection = Math.Atan2(light.Direction.Y, light.Direction.X) * (180 / Math.PI);
-        var circlePoints = Algorithms.GetCirclePoints(light.Position, light.Length);
-        var arcPoints = light.Angle == 360 ? circlePoints : Algorithms.TrimCircle(circlePoints, light.Position, (int)angleDirection, light.Angle); // Only trim the circle if the angle is less than 360
+        var angleDirection = Math.Atan2(direction.Y, direction.X) * (180 / Math.PI);
+        var circlePoints = Algorithms.GetCirclePoints(position, length);
+        var arcPoints = angle == 360 ? circlePoints : Algorithms.TrimCircle(circlePoints, position, (int)angleDirection, angle); // Only trim the circle if the angle is less than 360
 
-        if (light.Angle == 1) {
-            arcPoints = [light.Position + light.Direction * light.Length];
+        if (angle == 1) {
+            arcPoints = [position + direction * length];
         }
 
         for (int i = 0; i < arcPoints.Count; i++) {
-            var linePoints = Algorithms.GetLinePoints(light.Position, arcPoints[i]);
+            var linePoints = Algorithms.GetLinePoints(position, arcPoints[i]);
 
             for (int j = 0; j < linePoints.Count - 1; j++) {
                 var point = linePoints[j];
                 if (!gridMap.InBounds(point)) { continue; }
 
-                float distance = Vector2.Distance(point, light.Position);
-                byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * gridMap.Width];
-                byte newLightLevel = (byte)Math.Clamp(currentLightLevel + light.Intensity * (1 - (distance / light.Length)), ambientLightLevel, 255);
-
-                lightMapChanges[(int)point.X + (int)point.Y * gridMap.Width] = newLightLevel;
+                visibleCells[(int)point.X + (int)point.Y * gridMap.Width] = true;
 
                 var nextPoint = linePoints[j + 1];
-                var direction = Algorithms.GetDirection(point, nextPoint);
+                var castDir = Algorithms.GetDirection(point, nextPoint);
 
-                gridMap.GetCell(point, out Cell? currCell);
-                gridMap.GetCell(nextPoint, out Cell? nextCell);
+                if (gridMap.GetCell(point, out Cell? currCell)) {
+                    if (castDir == North && currCell!.Tiles.Last().BlockVisionNS) { break; }
+                    else if (castDir == West && currCell!.Tiles.Last().BlockVisionEW) { break; }
+                }
 
-                if (direction == North && currCell!.Tiles.Last().BlockVisionNS) { break; }
-                else if (direction == West && currCell!.Tiles.Last().BlockVisionEW) { break; }
-                else if (direction == South && nextCell != null && nextCell!.Tiles.Last().BlockVisionNS) { break; }
-                else if (direction == East && nextCell != null && nextCell!.Tiles.Last().BlockVisionEW) { break; }
+                if (gridMap.GetCell(nextPoint, out Cell? nextCell)) {
+                    if (nextCell != null) {
+                        if (nextCell!.Tiles.Last().BlockVision) { visibleCells[(int)nextPoint.X + (int)nextPoint.Y * gridMap.Width] = true; break; }
+                        if (castDir == South && nextCell!.Tiles.Last().BlockVisionNS) { break; }
+                        else if (castDir == East && nextCell!.Tiles.Last().BlockVisionEW) { break; }
+                    }
+                }
             }
         }
 
-        lightMapChanges.CopyTo(lightMap, 0);
+        return visibleCells;
     }
 }

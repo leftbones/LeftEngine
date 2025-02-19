@@ -19,9 +19,11 @@ class Map {
 
     private readonly GridMap gridMap;
     private readonly byte[] lightMap;
-    private readonly bool[] visionMap;
+    private bool[] visionMap;
 
     private readonly List<Light> lights = [];
+
+    private Vector2 playerPos;
 
     public Map(int width, int height) {
         Size = new Vector2(width, height);
@@ -63,7 +65,7 @@ class Map {
         }
 
         // Test (Add some random crates)
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < 10; i++) {
             var cx = RNG.Range(0, width);
             var cy = RNG.Range(0, height);
             if (gridMap.GetCell(cx, cy, out Cell? cell)) { if (cell!.Tiles.Last().ID == "white_tile") { continue; } }
@@ -71,11 +73,13 @@ class Map {
         }
 
         // Add some test lights
-        lights.Add(new Light(Center, 200, 20, 150)); // "Player" FOV
-        lights.Add(new Light(new Vector2(0, 0), 100, 8));
-        lights.Add(new Light(new Vector2(Width - 1, Height - 1), 100, 8));
-        lights.Add(new Light(new Vector2(0, Height - 1), 100, 8));
-        lights.Add(new Light(new Vector2(Width - 1, 0), 100, 8));
+        lights.Add(new Light(new Vector2(0, 0), 150, 11));
+        lights.Add(new Light(new Vector2(Width - 1, Height - 1), 150, 11));
+        lights.Add(new Light(new Vector2(0, Height - 1), 150, 11));
+        lights.Add(new Light(new Vector2(Width - 1, 0), 150, 11));
+
+        // Add the player pos
+        playerPos = Center;
 
         // ========================================================================================================
     }
@@ -108,14 +112,27 @@ class Map {
     public unsafe void UpdateLightmap() {
         Array.Fill(lightMap, ambientLightLevel);
 
-        // Update the test light to point towards the cursor and move with the camera
-        var testLight = lights[0];
-        testLight.Position = Camera.GetCellPos();
-        testLight.Direction = Camera.GetCursorCellPos() - testLight.Position;
+        // Update the "player" to point towards the cursor and move with the camera
+        playerPos = Camera.GetCellPos();
+        var playerDirection = Camera.GetCursorCellPos() - playerPos;
+        visionMap = Lighting.ComputeFOV(gridMap, playerPos, 20, 150, playerDirection);
 
-        // Update the light map for each light source (if in view of the "test light")
+        // Update the light map for each light source
         foreach (var light in lights) {
-            Lighting.ComputeFOV(light, lightMap, gridMap, ambientLightLevel);
+            var visibleCells = Lighting.ComputeFOV(gridMap, light.Position, light.Length, light.Angle, light.Direction);
+
+            for (int x = 0; x < Width; x++) {
+                for (int y = 0; y < Height; y++) {
+                    if (!visibleCells[x + y * Width]) { continue; }
+                    var point = new Vector2(x, y);
+
+                    float distance = Vector2.Distance(point, light.Position);
+                    byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * gridMap.Width];
+                    byte newLightLevel = (byte)Math.Clamp(currentLightLevel + light.Intensity * (1 - (distance / light.Length)), ambientLightLevel, 255);
+
+                    lightMap[(int)point.X + (int)point.Y * gridMap.Width] = newLightLevel;
+                }
+            }
         }
     }
 
@@ -130,7 +147,8 @@ class Map {
                 var currentCellPos = new Vector2(x, y);
 
                 if (gridMap.GetCell(x, y, out Cell? cell)) {
-                    var lightLevel = lightMap[x + y * Width] / 255.0f;
+                    var tileVisible = visionMap[x + y * Width];
+                    var lightLevel = tileVisible ? lightMap[x + y * Width] / 255.0f : (ambientLightLevel - 10) / 255.0f;
                     var tileColor = new Color(lightLevel, lightLevel, lightLevel);
                     var heightOffset = 0;
 
@@ -154,11 +172,10 @@ class Map {
         }
 
         // Render debug icons
-        for (int i = 1; i < lights.Count; i++) {
-            var lightSource = lights[i];
+        foreach (var light in lights) {
             var iconTexture = AssetManager.Icons["lightbulb"];
-            var lightPos = Algorithms.CellToPoint(lightSource.Position) - new Vector2(Global.TileSize.X / 2, iconTexture.Height); 
-            DrawTextureV(iconTexture, lightPos, lightSource.Color);
+            var lightPos = Algorithms.CellToPoint(light.Position) - new Vector2(Global.TileSize.X / 2, iconTexture.Height); 
+            DrawTextureV(iconTexture, lightPos, light.Color);
         }
     }
 }

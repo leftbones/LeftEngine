@@ -15,11 +15,11 @@ class Map {
     public int Width => (int)Size.X;
     public int Height => (int)Size.Y;
 
-    private readonly byte ambientLightLevel = 150;
+    private readonly byte ambientLightLevel = 100;
 
     private readonly GridMap gridMap;
     private readonly byte[] lightMap;
-    private bool[] visionMap;
+    private readonly bool[] visionMap;
 
     private readonly List<Light> lights = [];
 
@@ -38,7 +38,7 @@ class Map {
 
         // Build the vision map
         visionMap = new bool[width * height];
-        Array.Fill(visionMap, false);
+        Array.Fill(visionMap, true); // for now, all tiles are visible because FOV isn't implemented fully
 
         // ========================================================================================================
         // Testing
@@ -59,13 +59,8 @@ class Map {
             gridMap.AddTile(0, i, new Tile("wall_stone_w") { IsWall = true, BlockVisionEW = true });
         }
 
-        // Test (add a western wall to the white tile area)
-        for (int i = 0; i < 7; i++) {
-            gridMap.AddTile((int)Center.X - 3, (int)Center.Y - 3 + i, new Tile("wall_stone_w") { IsWall = true, BlockVisionEW = true });
-        }
-
         // Test (Add some random crates)
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 20; i++) {
             var cx = RNG.Range(0, width);
             var cy = RNG.Range(0, height);
             if (gridMap.GetCell(cx, cy, out Cell? cell)) { if (cell!.Tiles.Last().ID == "white_tile") { continue; } }
@@ -73,6 +68,7 @@ class Map {
         }
 
         // Add some test lights
+        lights.Add(new Light(Center, 150, 11));
         lights.Add(new Light(new Vector2(0, 0), 150, 11));
         lights.Add(new Light(new Vector2(Width - 1, Height - 1), 150, 11));
         lights.Add(new Light(new Vector2(0, Height - 1), 150, 11));
@@ -111,11 +107,11 @@ class Map {
     // Update the lightMap array for all lights
     public unsafe void UpdateLightmap() {
         Array.Fill(lightMap, ambientLightLevel);
+        Array.Fill(visionMap, false);
 
-        // Update the "player" to point towards the cursor and move with the camera
-        playerPos = Camera.GetCellPos();
-        var playerDirection = Camera.GetCursorCellPos() - playerPos;
-        visionMap = Lighting.ComputeFOV(gridMap, playerPos, 20, 150, playerDirection);
+        // Move the "player" light
+        // playerPos = Camera.GetCellPos();
+        // lights[0].Position = playerPos;
 
         // Update the light map for each light source
         foreach (var light in lights) {
@@ -125,6 +121,7 @@ class Map {
                 for (int y = 0; y < Height; y++) {
                     if (!visibleCells[x + y * Width]) { continue; }
                     var point = new Vector2(x, y);
+                    visionMap[x + y * Width] = true;
 
                     float distance = Vector2.Distance(point, light.Position);
                     byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * gridMap.Width];
@@ -147,8 +144,27 @@ class Map {
                 var currentCellPos = new Vector2(x, y);
 
                 if (gridMap.GetCell(x, y, out Cell? cell)) {
+                    var lightLevel = lightMap[x + y * Width] / 255.0f;
+
+                    // If the tile isn't visible, interpolate it's light level based on surrounding visible tiles
                     var tileVisible = visionMap[x + y * Width];
-                    var lightLevel = tileVisible ? lightMap[x + y * Width] / 255.0f : (ambientLightLevel - 10) / 255.0f;
+                    if (!tileVisible) {
+                        var surroundingLightLevels = new List<float>();
+                        for (int dx = -1; dx <= 1; dx++) {
+                            for (int dy = -1; dy <= 1; dy++) {
+                                if (dx == 0 && dy == 0) continue;
+                                int nx = x + dx;
+                                int ny = y + dy;
+                                if (gridMap.InBounds(nx, ny)) {
+                                    surroundingLightLevels.Add(lightMap[nx + ny * Width]);
+                                }
+                            }
+                        }
+                        if (surroundingLightLevels.Count > 0) {
+                            lightLevel = surroundingLightLevels.Average() / 255.0f;
+                        }
+                    }
+
                     var tileColor = new Color(lightLevel, lightLevel, lightLevel);
                     var heightOffset = 0;
 

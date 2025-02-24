@@ -16,7 +16,7 @@ static class Camera {
     public static void Init() {
         Position = Vector2.Zero;
         Target = Position;
-        Offset = new Vector2(0, 40);
+        Offset = new Vector2(0, 40); // This is a magic number for the player's height
 
         Viewport = new Camera2D {
             Target = Position + Offset,

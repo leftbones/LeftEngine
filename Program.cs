@@ -12,7 +12,7 @@ namespace LeftEngine;
 class Program {
     static void Main(string[] args) {
         // Setup
-        SetTraceLogLevel(Warning | Error | Fatal);
+        // SetTraceLogLevel(Warning | Error | Fatal);
 
         Config.Init();
         GameWindow.Init();

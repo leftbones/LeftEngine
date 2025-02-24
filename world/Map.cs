@@ -15,11 +15,11 @@ class Map {
     public int Width => (int)Size.X;
     public int Height => (int)Size.Y;
 
-    private readonly byte ambientLightLevel = 100;
+    private readonly byte ambientLightLevel = 150;
 
     private readonly GridMap gridMap;
     private readonly byte[] lightMap;
-    private readonly bool[] visionMap;
+    private bool[] visionMap;
 
     private readonly List<Light> lights = [];
 
@@ -68,11 +68,11 @@ class Map {
         }
 
         // Add some test lights
-        lights.Add(new Light(Center, 150, 11));
-        lights.Add(new Light(new Vector2(0, 0), 150, 11));
-        lights.Add(new Light(new Vector2(Width - 1, Height - 1), 150, 11));
-        lights.Add(new Light(new Vector2(0, Height - 1), 150, 11));
-        lights.Add(new Light(new Vector2(Width - 1, 0), 150, 11));
+        lights.Add(new Light(Center, 150, 8));
+        lights.Add(new Light(new Vector2(0, 0), 100, 16));
+        lights.Add(new Light(new Vector2(Width - 1, Height - 1), 100, 16));
+        lights.Add(new Light(new Vector2(0, Height - 1), 100, 16));
+        lights.Add(new Light(new Vector2(Width - 1, 0), 100, 16));
 
         // Add the player pos
         playerPos = Center;
@@ -107,11 +107,11 @@ class Map {
     // Update the lightMap array for all lights
     public unsafe void UpdateLightmap() {
         Array.Fill(lightMap, ambientLightLevel);
-        Array.Fill(visionMap, false);
 
-        // Move the "player" light
-        // playerPos = Camera.GetCellPos();
-        // lights[0].Position = playerPos;
+        // Update the player position and direction, then the vision map
+        playerPos = Camera.GetCellPos();
+        var playerDirection = Camera.GetCursorCellPos() - playerPos;
+        visionMap = Lighting.ComputeFOV(gridMap, playerPos, 32, 150, playerDirection);
 
         // Update the light map for each light source
         foreach (var light in lights) {
@@ -121,7 +121,6 @@ class Map {
                 for (int y = 0; y < Height; y++) {
                     if (!visibleCells[x + y * Width]) { continue; }
                     var point = new Vector2(x, y);
-                    visionMap[x + y * Width] = true;
 
                     float distance = Vector2.Distance(point, light.Position);
                     byte currentLightLevel = lightMap[(int)point.X + (int)point.Y * gridMap.Width];
@@ -144,26 +143,8 @@ class Map {
                 var currentCellPos = new Vector2(x, y);
 
                 if (gridMap.GetCell(x, y, out Cell? cell)) {
-                    var lightLevel = lightMap[x + y * Width] / 255.0f;
-
-                    // If the tile isn't visible, interpolate it's light level based on surrounding visible tiles
                     var tileVisible = visionMap[x + y * Width];
-                    if (!tileVisible) {
-                        var surroundingLightLevels = new List<float>();
-                        for (int dx = -1; dx <= 1; dx++) {
-                            for (int dy = -1; dy <= 1; dy++) {
-                                if (dx == 0 && dy == 0) continue;
-                                int nx = x + dx;
-                                int ny = y + dy;
-                                if (gridMap.InBounds(nx, ny)) {
-                                    surroundingLightLevels.Add(lightMap[nx + ny * Width]);
-                                }
-                            }
-                        }
-                        if (surroundingLightLevels.Count > 0) {
-                            lightLevel = surroundingLightLevels.Average() / 255.0f;
-                        }
-                    }
+                    var lightLevel = tileVisible ? lightMap[x + y * Width] / 255.0f : ambientLightLevel * 0.9f / 255.0f;
 
                     var tileColor = new Color(lightLevel, lightLevel, lightLevel);
                     var heightOffset = 0;

@@ -41,7 +41,7 @@ static class UI {
             var mouseTile = Camera.GetCursorCellPos();
 
             ImGui.Text($"FPS: {GameWindow.FPS}");
-            ImGui.Text($"Tile: {mouseTile.X}, {mouseTile.Y}");
+            ImGui.Text($"Cell: {mouseTile.X}, {mouseTile.Y}");
         }
     }
 }

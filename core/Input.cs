@@ -5,6 +5,9 @@ using static Raylib_cs.KeyboardKey;
 
 namespace LeftEngine.Core;
 
+// TODO
+// - Make sure mouse wheel input is working (untested)
+
 static class Input {
     public static Vector2 MousePos => GetMousePosition();
     public static float MouseX => GetMouseX();
@@ -132,22 +135,24 @@ static class Input {
         { "kp_decimal", (int)KpDecimal },
     };
 
-    private static List<int> pressedKeys = [];
-    private static List<int> releasedKeys = [];
-    private static List<int> heldKeys = [];
+    private readonly static List<int> mouseKeys = [0, 1, 2];
 
-    // Check if a key was pressed this frame
-    public static bool IsKeyPressed(string key) {
+    private readonly static List<int> pressedKeys = [];
+    private readonly static List<int> releasedKeys = [];
+    private readonly static List<int> heldKeys = [];
+
+    // Check if an input was pressed this frame
+    public static bool IsPressed(string key) {
         return pressedKeys.Contains(keyMap[key]);
     }
 
-    // Check if a key was released this frame
-    public static bool IsKeyReleased(string key) {
+    // Check if an input was released this frame
+    public static bool IsReleased(string key) {
         return releasedKeys.Contains(keyMap[key]);
     }
 
-    // Check if a key is being held
-    public static bool IsKeyDown(string key) {
+    // Check if an input is being held
+    public static bool IsDown(string key) {
         return heldKeys.Contains(keyMap[key]);
     }
 
@@ -159,13 +164,25 @@ static class Input {
 
         // Check held keys and remove keys that have been released, adding them to the released keys queue
         for (int i = heldKeys.Count - 1; i >= 0; i--) {
-            if (!Raylib.IsKeyDown((KeyboardKey)heldKeys[i])) {
-                releasedKeys.Add(heldKeys[i]);
-                heldKeys.RemoveAt(i);
+            if (mouseKeys.Contains(heldKeys[i])) {
+                if (!IsMouseButtonDown((MouseButton)heldKeys[i])) {
+                    releasedKeys.Add(heldKeys[i]);
+                    heldKeys.RemoveAt(i);
+                }
+            } else {
+                if (!IsKeyDown((KeyboardKey)heldKeys[i])) {
+                    releasedKeys.Add(heldKeys[i]);
+                    heldKeys.RemoveAt(i);
+                }
             }
         }
 
-        // Read input until there is none, adding each to the pressed keys queue
+        // Check for mouse button presses
+        if (IsMouseButtonPressed(MouseButton.Left)) { pressedKeys.Add((int)MouseButton.Left); }
+        if (IsMouseButtonPressed(MouseButton.Right)) { pressedKeys.Add((int)MouseButton.Right); }
+        if (IsMouseButtonPressed(MouseButton.Middle)) { pressedKeys.Add((int)MouseButton.Middle); }
+
+        // Read keyboard input until there is none, adding each to the pressed keys queue
         var key = GetKeyPressed();
         while (key != 0) {
             pressedKeys.Add(key);

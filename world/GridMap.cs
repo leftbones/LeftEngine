@@ -63,6 +63,15 @@ class GridMap {
         return true;
     }
 
+    public bool RemoveTile(Vector2 pos) { return RemoveTile((int)pos.X, (int)pos.Y); }
+    public bool RemoveTile(int x, int y) {
+        if (!InBounds(x, y)) { return false; }
+        var cell = cells[x + y * Width];
+        if (cell.Tiles.Count == 1) { return false; }
+        cell.Tiles.RemoveAt(cell.Tiles.Count - 1);
+        return true;
+    }
+
     public bool GetCell(Vector2 pos, out Cell? cell)  { return GetCell((int)pos.X, (int)pos.Y, out cell); }
     public bool GetCell(int x, int y, out Cell? cell) {
         if (!InBounds(x, y)) { cell = null; return false; }
